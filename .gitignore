@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+Icon?
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*~
+
+# Python
+__pycache__/
+*.pyc
+
+# Stray/local working files that sync into this folder but aren't part of the delivery
+flora-compare/
+
+# Flora batch runtime artifacts (per-run, local — never version these)
+batch_state.json
+**/batch_state.json
+*_MCP_*.png
+*_MCP_*.jpg
+*_MCP_*.jpeg
