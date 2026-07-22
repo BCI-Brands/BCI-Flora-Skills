@@ -18,7 +18,7 @@ Each teammate needs, on their own machine:
 |---|---|
 | **Claude Code** | The skill uses your local shell to move image bytes to/from Flora. It does **not** run on claude.ai web. |
 | **Flora MCP connected** | Connect your own Flora account via Claude's Connectors (or `claude mcp add`). The skill finds it automatically — no IDs to configure. |
-| **Flora credits** | Each run bills the technique's `run_cost`; N images ≈ N × cost. |
+| **Flora credits** | Each run bills the technique's `run_cost` — cost = **(number of runs) × run_cost** (per-image techniques: once per image; compose/multi-input techniques: once per look). |
 | **`python3` + `curl`** | Standard on macOS — nothing to install. |
 
 ---
@@ -49,7 +49,7 @@ In a Claude Code session, ask in plain language:
 
 (`<technique>` can be a Flora technique URL or slug.) The skill will:
 
-1. Scan the folder + retrieve the technique, then show you **N images × $run_cost = $total** and **wait for your approval** before spending anything.
+1. Scan the folder + retrieve the technique, then show you **(number of runs) × $run_cost = $total** — once per image for a per-image technique, once per look for a compose (multi-input) technique — and **wait for your approval** before spending anything.
 2. Upload → run → download, checkpointing to a `batch_state.json` after every step.
 3. Save outputs next to your inputs (or in a sibling / mirrored folder — your choice), named `<original>_MCP_1.png`, `_2.png`.
 
@@ -90,10 +90,24 @@ bci-flora-skills/
 └── skills/
     └── flora-batch/
         ├── SKILL.md            # the skill definition Claude reads
-        └── scripts/            # local byte-movers (init / upload / download / review)
+        └── scripts/
+            ├── floralib.py      # shared helpers: downloads, cost, role-mapping, GCS lint, compose state
+            ├── init.py          # per-image: enumerate + build output tree + write state
+            ├── upload.py        # reservations + state -> GCS/ImageKit POST per image
+            ├── download.py      # per-image (--state) or compose (--outputs/--out-dir); host-aware
+            ├── compose.py       # multi-input: map files -> roles, correct cost gate
+            ├── contact_sheet.py # portable review gallery, no headless Chrome
+            ├── review.py        # legacy headless-Chrome comparison HTML
+            └── tests/           # pytest unit tests
 ```
 
 Everything is **portable by design** — no hardcoded accounts, workspace IDs, or file paths. Each teammate uses their own Flora connector and credits.
+
+---
+
+## Changelog
+
+- 2026-07-22: hardened for compose (multi-input) techniques + workspace billing; corrected the 100 KB `execute` rule; host-aware downloads; portable contact-sheet review. See `docs/superpowers/plans/2026-07-22-flora-batch-hardening-and-multi-input.md`.
 
 ---
 

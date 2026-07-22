@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+"""Portable, self-contained review gallery for a finished run. Relative <img>
+refs (works by double-click, no server, no headless Chrome). Press D for a
+developer mode that copies a tile's name on click.
+
+Usage:
+  contact_sheet.py --dir DIR --outputs OUTPUTS.json \
+      [--title T] [--subtitle S] [--inputs role=FILE,role=FILE]
+Writes DIR/_contact_sheet.html.
+"""
+import argparse, os, json, re, html as _html
+
+_CSS = """
+:root{--bg:#f6f6f4;--panel:#fff;--ink:#1b221d;--muted:#6b7168;--line:#e3e3de;--accent:#2743E3;}
+@media (prefers-color-scheme:dark){:root{--bg:#14150f;--panel:#1c1e18;--ink:#f2f2ec;--muted:#9a9f92;--line:#2c2f27;}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,sans-serif}
+header{padding:22px 26px 8px}h1{margin:0;font-size:20px}.sub{color:var(--muted);margin-top:4px;font-size:13px}
+h2{margin:26px 26px 10px;font-size:13px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);border-top:1px solid var(--line);padding-top:18px}
+.grid{display:grid;gap:12px;padding:0 26px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+figure{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+figure img{display:block;width:100%;height:auto;background:#fff}
+figcaption{padding:7px 9px;font-size:12px;color:var(--muted)}.inputs figure{border-color:var(--accent)}
+body.dev [data-el]{outline:1px dashed rgba(39,67,227,.4)}body.dev [data-el]:hover{outline:2px solid #2743E3;cursor:crosshair}
+.dev-badge{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:9;display:none;padding:7px 14px;font:600 11px/1 system-ui;letter-spacing:.14em;text-transform:uppercase;color:#fff;background:#2743E3;border-radius:999px}
+body.dev .dev-badge{display:block}.dev-toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);z-index:9;opacity:0;padding:9px 16px;font:600 12px/1 system-ui;color:#fff;background:#1B2FA8;border-radius:999px;transition:opacity .2s}.dev-toast.show{opacity:1}
+"""
+
+_JS = """
+(function(){var toast=document.getElementById('t'),tT=null;
+function isDev(){return document.body.classList.contains('dev');}
+function msg(m){toast.textContent=m;toast.classList.add('show');clearTimeout(tT);tT=setTimeout(function(){toast.classList.remove('show');},1400);}
+function copy(x){
+  function fb(){var a=document.createElement('textarea');a.value=x;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();var ok=false;try{ok=document.execCommand('copy');}catch(e){}document.body.removeChild(a);msg(ok?'Copied: '+x:'Copy failed');}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(x).then(function(){msg('Copied: '+x);},fb);}else{fb();}
+}
+document.addEventListener('keydown',function(e){if(e.key==='d'||e.key==='D')document.body.classList.toggle('dev');});
+document.addEventListener('click',function(e){if(!isDev())return;var el=e.target.closest('[data-el]');if(!el)return;e.preventDefault();e.stopPropagation();copy(el.getAttribute('data-el'));},true);})();
+"""
+
+
+def _fig(src, caption, el):
+    return ('<figure data-el="%s"><img src="%s"><figcaption>%s</figcaption></figure>'
+            % (_html.escape(el, quote=True), _html.escape(src, quote=True), _html.escape(caption)))
+
+
+def render_contact_sheet(title, subtitle, inputs, groups):
+    """inputs: [(label, filename)]; groups: [(heading, [filename, ...])]. Returns HTML."""
+    parts = ["<meta charset='utf-8'><title>%s</title><style>%s</style>" % (_html.escape(title), _CSS)]
+    parts.append("<header><h1>%s</h1><div class='sub'>%s</div></header>"
+                 % (_html.escape(title), _html.escape(subtitle)))
+    if inputs:
+        parts.append("<h2>Inputs</h2><div class='grid inputs'>")
+        for label, fn in inputs:
+            parts.append(_fig(fn, label + " — " + fn, "input " + label))
+        parts.append("</div>")
+    for heading, files in groups:
+        parts.append("<h2>%s</h2><div class='grid'>" % _html.escape(heading))
+        for fn in files:
+            parts.append(_fig(fn, fn, "output " + fn))
+        parts.append("</div>")
+    parts.append('<div class="dev-badge">DEV MODE · click a tile to copy its name · press D to exit</div>')
+    parts.append('<div class="dev-toast" id="t"></div>')
+    parts.append("<script>%s</script>" % _JS)
+    return "\n".join(parts)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--dir", required=True)
+    ap.add_argument("--outputs", required=True)
+    ap.add_argument("--title", default="Contact sheet")
+    ap.add_argument("--subtitle", default="")
+    ap.add_argument("--inputs", default="", help="role=FILE,role=FILE (optional)")
+    a = ap.parse_args()
+
+    inputs = []
+    if a.inputs:
+        for pair in a.inputs.split(","):
+            role, fn = pair.split("=", 1)
+            inputs.append((role.strip(), fn.strip()))
+
+    outs = json.load(open(a.outputs))
+    groups_map = {}
+    for o in outs:
+        oid = o["output_id"]
+        prefix = oid.rsplit("-", 1)[0] if "-" in oid else oid   # full / top-crop / top-detail
+        groups_map.setdefault(prefix, []).append(oid + ".png")
+    def _num(fn):
+        m = re.search(r"(\d+)\.png$", fn)
+        return (int(m.group(1)) if m else 0, fn)
+    groups = [(k, sorted(v, key=_num)) for k, v in sorted(groups_map.items())]
+
+    html = render_contact_sheet(a.title, a.subtitle, inputs, groups)
+    out = os.path.join(a.dir, "_contact_sheet.html")
+    open(out, "w").write(html)
+    print("wrote", out)
+
+
+if __name__ == "__main__":
+    main()

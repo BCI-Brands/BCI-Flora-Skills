@@ -1,0 +1,115 @@
+import floralib
+
+
+def test_output_variants_imagekit_tries_orig_true_first():
+    url = "https://ik.imagekit.io/flora/run_abc/output_3.png"
+    assert floralib.output_variants(url) == [url + "?tr=orig-true", url]
+
+
+def test_output_variants_media_flora_is_bare_only():
+    url = "https://media.flora.ai/node-inputs/2026/7/22/anonymous/abc.png"
+    assert floralib.output_variants(url) == [url]
+
+
+def test_output_variants_compressed_is_always_bare():
+    url = "https://ik.imagekit.io/flora/run_abc/output_3.png"
+    assert floralib.output_variants(url, compressed=True) == [url]
+
+
+def test_output_variants_imagekit_with_existing_query_uses_ampersand():
+    url = "https://ik.imagekit.io/flora/x.png?v=2"
+    assert floralib.output_variants(url) == [url + "&tr=orig-true", url]
+
+
+def test_plan_downloads_names_by_output_id():
+    outputs = [
+        {"output_id": "full-1", "url": "https://media.flora.ai/a.png"},
+        {"output_id": "top-detail-2", "url": "https://media.flora.ai/b.png"},
+    ]
+    assert floralib.plan_downloads(outputs, "/out") == [
+        ("https://media.flora.ai/a.png", "/out/full-1.png"),
+        ("https://media.flora.ai/b.png", "/out/top-detail-2.png"),
+    ]
+
+
+def test_estimate_cost_is_flat_per_run():
+    assert floralib.estimate_cost(4.32, 1) == 4.32     # one compose look
+    assert floralib.estimate_cost(0.72, 10) == 7.2     # ten per-image runs
+    assert floralib.estimate_cost(4.32, 0) == 0.0
+
+
+def test_map_files_to_roles_look9_maps_cleanly():
+    files = [
+        "91526272_143_OATMEAL_061226_5564.jpg",
+        "PROP_DENIM_JEANS_01_050526_9884.jpg",
+        "PROP_SHOE_01_050526_9890.jpg",
+    ]
+    res = floralib.map_files_to_roles(files, ["top", "bottom", "shoes"])
+    assert res["mapping"] == {
+        "top": "91526272_143_OATMEAL_061226_5564.jpg",
+        "bottom": "PROP_DENIM_JEANS_01_050526_9884.jpg",
+        "shoes": "PROP_SHOE_01_050526_9890.jpg",
+    }
+    assert res["unmatched_files"] == []
+    assert res["unfilled_roles"] == []
+
+
+def test_map_files_to_roles_flags_ambiguity():
+    files = ["a_shirt.jpg", "b_tee.jpg", "x_jean.jpg"]
+    res = floralib.map_files_to_roles(files, ["top", "bottom", "shoes"])
+    assert res["mapping"] == {"bottom": "x_jean.jpg"}
+    assert set(res["unmatched_files"]) == {"a_shirt.jpg", "b_tee.jpg"}
+    assert set(res["unfilled_roles"]) == {"top", "shoes"}
+
+
+GOOD_RES = {
+    "url": "https://storage.googleapis.com/flora-assets-prod/",
+    "form_fields": {
+        "Content-Type": "image/jpeg",
+        "key": "mcp-uploads/x.jpg",
+        "x-goog-date": "20260722T144942Z",
+        "x-goog-credential": "svc/20260722/auto/storage/goog4_request",
+        "x-goog-algorithm": "GOOG4-RSA-SHA256",
+        "policy": "eyJhIjoxfQ==",
+        "x-goog-signature": "ab" * 256,   # 512 lowercase hex chars
+    },
+}
+
+
+def test_validate_good_reservation_has_no_problems():
+    assert floralib.validate_gcs_reservation(GOOD_RES) == []
+
+
+def test_validate_catches_non_hex_signature():
+    bad = {"url": GOOD_RES["url"], "form_fields": dict(GOOD_RES["form_fields"])}
+    bad["form_fields"]["x-goog-signature"] = "zz" + "ab" * 255
+    assert any("hex" in p for p in floralib.validate_gcs_reservation(bad))
+
+
+def test_validate_catches_missing_field():
+    bad = {"url": GOOD_RES["url"], "form_fields": dict(GOOD_RES["form_fields"])}
+    del bad["form_fields"]["policy"]
+    assert any("policy" in p for p in floralib.validate_gcs_reservation(bad))
+
+
+def test_build_compose_state_shape():
+    st = floralib.build_compose_state(
+        "/looks/LOOK 9", "tech_x", {"top": "a.jpg", "bottom": "b.jpg"}, 4.32)
+    assert st["mode"] == "compose"
+    assert st["technique"] == "tech_x"
+    assert st["run_cost"] == 4.32
+    assert st["run_id"] is None and st["run_stage"] == "pending"
+    assert st["outputs"] == []
+    assert st["inputs"]["top"] == {"file": "a.jpg", "asset_id": None, "stage": "pending"}
+    assert set(st["inputs"]) == {"top", "bottom"}
+
+
+def test_compose_state_in_progress():
+    fresh = floralib.build_compose_state("/x", "tech_x", {"top": "a.jpg"}, 4.32)
+    assert floralib.compose_state_in_progress(fresh) is False
+    up = floralib.build_compose_state("/x", "tech_x", {"top": "a.jpg"}, 4.32)
+    up["inputs"]["top"]["stage"] = "uploaded"; up["inputs"]["top"]["asset_id"] = "asset_1"
+    assert floralib.compose_state_in_progress(up) is True
+    started = floralib.build_compose_state("/x", "tech_x", {"top": "a.jpg"}, 4.32)
+    started["run_stage"] = "run_started"
+    assert floralib.compose_state_in_progress(started) is True
