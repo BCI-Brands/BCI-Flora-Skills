@@ -12,9 +12,6 @@ Icon?
 __pycache__/
 *.pyc
 
-# Stray/local working files that sync into this folder but aren't part of the delivery
-flora-compare/
-
 # Flora batch runtime artifacts (per-run, local — never version these)
 batch_state.json
 **/batch_state.json
