@@ -163,6 +163,13 @@ def qa_overall_flag(color_verdict, construction_verdict):
     return not (color_verdict == "match" and construction_verdict == "match")
 
 
+def _sanitize_table_cell(text):
+    """Sanitize free-text for safe insertion into Markdown table cells.
+    Escapes pipe characters (which delimit columns) and replaces newlines
+    with spaces (which would break single-row requirement)."""
+    return text.replace("|", "\\|").replace("\n", " ")
+
+
 def render_qa_report_md(results):
     """results: [{"output","input","color":{"verdict","notes"},
     "construction":{"verdict","notes"},"overall_flag"}, ...]. Returns a
@@ -173,8 +180,8 @@ def render_qa_report_md(results):
         c, k = r["color"], r["construction"]
         lines.append("| %s | %s — %s | %s — %s | %s |" % (
             os.path.basename(r["output"]),
-            c["verdict"], c["notes"],
-            k["verdict"], k["notes"],
+            c["verdict"], _sanitize_table_cell(c["notes"]),
+            k["verdict"], _sanitize_table_cell(k["notes"]),
             "yes" if r["overall_flag"] else "no",
         ))
     return "\n".join(lines)

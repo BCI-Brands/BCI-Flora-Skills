@@ -174,3 +174,37 @@ def test_render_qa_report_md_builds_table_with_flag_column():
     assert "shirt_MCP_2.png" in md
     assert "mismatch" in md
     assert "navy rendered bright blue" in md
+
+
+def test_render_qa_report_md_escapes_pipe_in_notes():
+    """Pipe characters in notes must be escaped to avoid splitting columns."""
+    results = [
+        {
+            "output": "/out/test_MCP_1.png", "input": "/in/test.jpg",
+            "color": {"verdict": "match", "notes": "collar | cuffs mismatched"},
+            "construction": {"verdict": "match", "notes": "ok"},
+            "overall_flag": False,
+        },
+    ]
+    md = floralib.render_qa_report_md(results)
+    # Verify escaped pipe appears in output
+    assert "\\|" in md
+    # Verify that the escaped pipe is present instead of raw pipe in notes
+    assert "collar \\| cuffs mismatched" in md
+
+
+def test_render_qa_report_md_replaces_newline_in_notes():
+    """Newlines in notes must be replaced to maintain one-row-per-line structure."""
+    results = [
+        {
+            "output": "/out/test_MCP_1.png", "input": "/in/test.jpg",
+            "color": {"verdict": "match", "notes": "line1\nline2"},
+            "construction": {"verdict": "match", "notes": "ok"},
+            "overall_flag": False,
+        },
+    ]
+    md = floralib.render_qa_report_md(results)
+    # Verify no raw newline inside the data row
+    lines = md.splitlines()
+    assert len(lines) == 3  # header + separator + 1 data row (not 4+)
+    assert "line1 line2" in md  # newline replaced with space
