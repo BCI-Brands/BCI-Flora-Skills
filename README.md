@@ -105,6 +105,12 @@ Everything is **portable by design** — no hardcoded accounts, workspace IDs, o
 
 ---
 
+## Roadmap
+
+- **Garment QA comparison** *(planned, not built)* — after you review the contact sheet and pick outputs, Claude will check the selected outputs against their input photos for color drift and construction drift (silhouette, buttons, zippers, pockets, and other details), and flag anything that looks off. Uses Claude's own vision, so it spends no Flora credits. See the design in `docs/specs/garment-qa-comparison.md`.
+
+---
+
 ## Changelog
 
 - 2026-07-22: hardened for compose (multi-input) techniques + workspace billing; corrected the 100 KB `execute` rule; host-aware downloads; portable contact-sheet review. See `docs/superpowers/plans/2026-07-22-flora-batch-hardening-and-multi-input.md`.
