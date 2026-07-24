@@ -112,6 +112,8 @@ bci-flora-skills/
             ├── compose.py       # multi-input: map files -> roles, correct cost gate
             ├── contact_sheet.py # portable review gallery, no headless Chrome
             ├── review.py        # legacy headless-Chrome comparison HTML
+            ├── qa_resolve.py    # map picked outputs back to input photos (per-image, v1)
+            ├── qa_report.py     # render QA verdicts into qa_report.json/.md
             └── tests/           # pytest unit tests
 ```
 
@@ -119,14 +121,17 @@ Everything is **portable by design** — no hardcoded accounts, workspace IDs, o
 
 ---
 
-## Roadmap
+## Garment QA
 
-- **Garment QA comparison** *(planned, not built)* — after you review the contact sheet and pick outputs, Claude will check the selected outputs against their input photos for color drift and construction drift (silhouette, buttons, zippers, pockets, and other details), and flag anything that looks off. Uses Claude's own vision, so it spends no Flora credits. See the design in `docs/specs/garment-qa-comparison.md`.
+After you review the contact sheet and tell Claude which outputs you like, ask it to QA them. Claude checks each pick against its input photo for two things — **color drift** (rendered color doesn't match the input) and **construction drift** (buttons, zippers, pockets, logos, prints, or other details hallucinated, missing, or altered) — and reports back only the ones worth a second look.
+
+Uses Claude's own vision, so it spends **no Flora credits**. Per-image batches only for now; compose (multi-input) runs aren't supported yet. See the design in `docs/specs/garment-qa-comparison.md`.
 
 ---
 
 ## Changelog
 
+- 2026-07-24: added garment QA comparison (color + construction drift checks on user-picked outputs, per-image batches). See `docs/superpowers/plans/2026-07-24-garment-qa-comparison.md`.
 - 2026-07-22: hardened for compose (multi-input) techniques + workspace billing; corrected the 100 KB `execute` rule; host-aware downloads; portable contact-sheet review. See `docs/superpowers/plans/2026-07-22-flora-batch-hardening-and-multi-input.md`.
 
 ---
