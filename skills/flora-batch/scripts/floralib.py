@@ -154,3 +154,10 @@ def resolve_qa_pairs(state, selected_outputs):
         else:
             unresolved.append(name)
     return {"pairs": pairs, "unresolved": unresolved}
+
+
+def qa_overall_flag(color_verdict, construction_verdict):
+    """True unless BOTH checks are a clean 'match' -- minor_shift/minor_deviation
+    and mismatch all count as worth a human look. Keeps the flag decision
+    deterministic instead of asking Claude to self-report it."""
+    return not (color_verdict == "match" and construction_verdict == "match")

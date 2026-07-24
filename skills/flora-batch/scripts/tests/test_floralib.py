@@ -141,3 +141,13 @@ def test_resolve_qa_pairs_flags_unresolved_selection():
     result = floralib.resolve_qa_pairs(state, ["shirt_MCP_1.png", "ghost_MCP_9.png"])
     assert result["pairs"] == [{"output": "/out/shirt_MCP_1.png", "input": "/photos/shirt.jpg"}]
     assert result["unresolved"] == ["ghost_MCP_9.png"]
+
+
+def test_qa_overall_flag_clean_match_is_not_flagged():
+    assert floralib.qa_overall_flag("match", "match") is False
+
+
+def test_qa_overall_flag_any_non_match_is_flagged():
+    assert floralib.qa_overall_flag("minor_shift", "match") is True
+    assert floralib.qa_overall_flag("match", "mismatch") is True
+    assert floralib.qa_overall_flag("minor_shift", "minor_deviation") is True
