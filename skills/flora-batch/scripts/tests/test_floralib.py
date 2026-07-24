@@ -143,6 +143,26 @@ def test_resolve_qa_pairs_flags_unresolved_selection():
     assert result["unresolved"] == ["ghost_MCP_9.png"]
 
 
+def test_resolve_qa_pairs_flags_ambiguous_basename_collision():
+    """A recursive batch (init.py --recurse) can produce two different input
+    photos that both output the same basename (e.g. red/shirt.jpg and
+    blue/shirt.jpg both yield shirt_MCP_1.png in their own subfolders). Picking
+    that basename is inherently ambiguous -- it must be reported, not guessed."""
+    state = {
+        "input": "/photos",
+        "items": [
+            {"rel": "red/shirt.jpg", "stem": "shirt", "files": [
+                "/out/red/shirt_MCP_1.png"]},
+            {"rel": "blue/shirt.jpg", "stem": "shirt", "files": [
+                "/out/blue/shirt_MCP_1.png"]},
+        ],
+    }
+    result = floralib.resolve_qa_pairs(state, ["shirt_MCP_1.png"])
+    assert result["pairs"] == []
+    assert result["ambiguous"] == ["shirt_MCP_1.png"]
+    assert result["unresolved"] == []
+
+
 def test_qa_overall_flag_clean_match_is_not_flagged():
     assert floralib.qa_overall_flag("match", "match") is False
 
@@ -239,3 +259,19 @@ def test_render_qa_report_md_escapes_backslash_before_pipe():
     # as a column delimiter. Any deviation (e.g., S\\|M with only 2 backslashes)
     # means the bug is back.
     assert "S\\\\\\|M" in md, f"Expected fully-escaped S\\\\\\|M not found in: {md}"
+
+
+def test_render_qa_report_md_replaces_carriage_return_in_notes():
+    """A lone \\r (e.g. from \\r\\n line endings) must not survive into the
+    rendered cell -- it would leave a stray carriage return in the table."""
+    results = [
+        {
+            "output": "/out/test_MCP_1.png", "input": "/in/test.jpg",
+            "color": {"verdict": "match", "notes": "line1\rline2"},
+            "construction": {"verdict": "match", "notes": "ok"},
+            "overall_flag": False,
+        },
+    ]
+    md = floralib.render_qa_report_md(results)
+    assert "\r" not in md
+    assert "line1 line2" in md

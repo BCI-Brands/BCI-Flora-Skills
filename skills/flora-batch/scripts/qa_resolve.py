@@ -8,7 +8,10 @@ Usage:
 
 Writes qa_manifest.json next to --state: [{"output": path, "input": path}].
 Any selected filename not found in --state is printed under UNRESOLVED
-instead of being silently dropped, and the script exits 1.
+instead of being silently dropped. Any selected filename whose basename
+collides across two different input photos (a recursive-batch edge case --
+see resolve_qa_pairs docstring) is printed under AMBIGUOUS instead of being
+silently paired with a possibly-wrong input. Either case exits 1.
 """
 import argparse, os, json, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -32,6 +35,10 @@ def main():
     print("manifest  :", manifest_path)
     if result["unresolved"]:
         print("UNRESOLVED (not found in state -- check spelling):", result["unresolved"])
+    if result["ambiguous"]:
+        print("AMBIGUOUS (same filename, multiple different inputs -- resolve manually):",
+              result["ambiguous"])
+    if result["unresolved"] or result["ambiguous"]:
         sys.exit(1)
 
 
