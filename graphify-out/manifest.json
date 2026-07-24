@@ -1,0 +1,87 @@
+{
+  ".claude/settings.json": {
+    "mtime": 1784898797.6482182,
+    "ast_hash": "1feffed4ce1163acb82518027a8346b0",
+    "semantic_hash": "1feffed4ce1163acb82518027a8346b0"
+  },
+  "pyproject.toml": {
+    "mtime": 1784898948.8632326,
+    "ast_hash": "e063a0b9301129b15f9be56bb767116a",
+    "semantic_hash": "e063a0b9301129b15f9be56bb767116a"
+  },
+  "skills/flora-batch/scripts/compose.py": {
+    "mtime": 1784898125.9005373,
+    "ast_hash": "19a4ec0f77ff404586fb9231fb4adc94",
+    "semantic_hash": "19a4ec0f77ff404586fb9231fb4adc94"
+  },
+  "skills/flora-batch/scripts/contact_sheet.py": {
+    "mtime": 1784898125.9008179,
+    "ast_hash": "fec596784be3d824314631ce6dc1c0bd",
+    "semantic_hash": "fec596784be3d824314631ce6dc1c0bd"
+  },
+  "skills/flora-batch/scripts/download.py": {
+    "mtime": 1784898125.9009953,
+    "ast_hash": "7c3c162759d0c5ee8ea875aaca4dff67",
+    "semantic_hash": "7c3c162759d0c5ee8ea875aaca4dff67"
+  },
+  "skills/flora-batch/scripts/floralib.py": {
+    "mtime": 1784898125.9012406,
+    "ast_hash": "136a2ece2331bc52153c92db225577bb",
+    "semantic_hash": "136a2ece2331bc52153c92db225577bb"
+  },
+  "skills/flora-batch/scripts/init.py": {
+    "mtime": 1784898125.901514,
+    "ast_hash": "f1031ade04d3c728ef68565b061ddf53",
+    "semantic_hash": "f1031ade04d3c728ef68565b061ddf53"
+  },
+  "skills/flora-batch/scripts/review.py": {
+    "mtime": 1784898125.9016404,
+    "ast_hash": "bdb0bf9313c858e209fcc0e3afcf33fe",
+    "semantic_hash": "bdb0bf9313c858e209fcc0e3afcf33fe"
+  },
+  "skills/flora-batch/scripts/tests/conftest.py": {
+    "mtime": 1784898125.9020638,
+    "ast_hash": "53767d0968a241851057d2294899e538",
+    "semantic_hash": "53767d0968a241851057d2294899e538"
+  },
+  "skills/flora-batch/scripts/tests/test_contact_sheet.py": {
+    "mtime": 1784898125.9022486,
+    "ast_hash": "b105e12fcc4958c74716c814d1de24bf",
+    "semantic_hash": "b105e12fcc4958c74716c814d1de24bf"
+  },
+  "skills/flora-batch/scripts/tests/test_floralib.py": {
+    "mtime": 1784898125.9023767,
+    "ast_hash": "58d42de9904276c5686e0b95dcdbf853",
+    "semantic_hash": "58d42de9904276c5686e0b95dcdbf853"
+  },
+  "skills/flora-batch/scripts/upload.py": {
+    "mtime": 1784898125.902485,
+    "ast_hash": "0bb8bc9c0542a22f6731fdd86afdeace",
+    "semantic_hash": "0bb8bc9c0542a22f6731fdd86afdeace"
+  },
+  ".claude/skills/sync-flora-batch/SKILL.md": {
+    "mtime": 1784898653.9112415,
+    "ast_hash": "fbe497901a6cb2273f0a6eceef4ff64e",
+    "semantic_hash": "fbe497901a6cb2273f0a6eceef4ff64e"
+  },
+  "CLAUDE.md": {
+    "mtime": 1784898967.4382715,
+    "ast_hash": "886829872f51317d35c54e4c3e1ed2eb",
+    "semantic_hash": "886829872f51317d35c54e4c3e1ed2eb"
+  },
+  "README.md": {
+    "mtime": 1784898790.1919866,
+    "ast_hash": "bd7c863163f88182b73312b4fb7c6854",
+    "semantic_hash": "bd7c863163f88182b73312b4fb7c6854"
+  },
+  "docs/superpowers/plans/2026-07-22-flora-batch-hardening-and-multi-input.md": {
+    "mtime": 1784898125.8994026,
+    "ast_hash": "e7ceef311de2b9cffc56fe84874006c7",
+    "semantic_hash": "e7ceef311de2b9cffc56fe84874006c7"
+  },
+  "skills/flora-batch/SKILL.md": {
+    "mtime": 1784898125.9001539,
+    "ast_hash": "d41d9ea6c64d6b1327cedc4d6d12388f",
+    "semantic_hash": "d41d9ea6c64d6b1327cedc4d6d12388f"
+  }
+}
