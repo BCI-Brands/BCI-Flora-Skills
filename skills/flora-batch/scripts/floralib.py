@@ -161,3 +161,20 @@ def qa_overall_flag(color_verdict, construction_verdict):
     and mismatch all count as worth a human look. Keeps the flag decision
     deterministic instead of asking Claude to self-report it."""
     return not (color_verdict == "match" and construction_verdict == "match")
+
+
+def render_qa_report_md(results):
+    """results: [{"output","input","color":{"verdict","notes"},
+    "construction":{"verdict","notes"},"overall_flag"}, ...]. Returns a
+    Markdown table -- the human-readable half of the QA report (the other
+    half is the same records dumped as qa_report.json)."""
+    lines = ["| Output | Color | Construction | Flagged |", "|---|---|---|---|"]
+    for r in results:
+        c, k = r["color"], r["construction"]
+        lines.append("| %s | %s — %s | %s — %s | %s |" % (
+            os.path.basename(r["output"]),
+            c["verdict"], c["notes"],
+            k["verdict"], k["notes"],
+            "yes" if r["overall_flag"] else "no",
+        ))
+    return "\n".join(lines)

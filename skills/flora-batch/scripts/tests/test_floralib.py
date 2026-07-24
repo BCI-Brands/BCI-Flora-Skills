@@ -151,3 +151,26 @@ def test_qa_overall_flag_any_non_match_is_flagged():
     assert floralib.qa_overall_flag("minor_shift", "match") is True
     assert floralib.qa_overall_flag("match", "mismatch") is True
     assert floralib.qa_overall_flag("minor_shift", "minor_deviation") is True
+
+
+def test_render_qa_report_md_builds_table_with_flag_column():
+    results = [
+        {
+            "output": "/out/shirt_MCP_1.png", "input": "/in/shirt.jpg",
+            "color": {"verdict": "match", "notes": "navy matches"},
+            "construction": {"verdict": "match", "notes": "all buttons present"},
+            "overall_flag": False,
+        },
+        {
+            "output": "/out/shirt_MCP_2.png", "input": "/in/shirt.jpg",
+            "color": {"verdict": "mismatch", "notes": "navy rendered bright blue"},
+            "construction": {"verdict": "match", "notes": "ok"},
+            "overall_flag": True,
+        },
+    ]
+    md = floralib.render_qa_report_md(results)
+    assert md.splitlines()[0].startswith("| Output |")
+    assert "shirt_MCP_1.png" in md
+    assert "shirt_MCP_2.png" in md
+    assert "mismatch" in md
+    assert "navy rendered bright blue" in md
