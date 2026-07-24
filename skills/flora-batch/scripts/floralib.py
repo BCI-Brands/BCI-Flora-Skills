@@ -165,9 +165,11 @@ def qa_overall_flag(color_verdict, construction_verdict):
 
 def _sanitize_table_cell(text):
     """Sanitize free-text for safe insertion into Markdown table cells.
-    Escapes pipe characters (which delimit columns) and replaces newlines
-    with spaces (which would break single-row requirement)."""
-    return text.replace("|", "\\|").replace("\n", " ")
+    Escapes backslashes and pipe characters (which delimit columns) and replaces
+    newlines with spaces (which would break single-row requirement). Backslashes
+    must be escaped first to prevent pre-existing \\| sequences from becoming
+    unescaped pipes after pipe-escaping."""
+    return text.replace("\\", "\\\\").replace("|", "\\|").replace("\n", " ")
 
 
 def render_qa_report_md(results):

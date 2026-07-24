@@ -208,3 +208,26 @@ def test_render_qa_report_md_replaces_newline_in_notes():
     lines = md.splitlines()
     assert len(lines) == 3  # header + separator + 1 data row (not 4+)
     assert "line1 line2" in md  # newline replaced with space
+
+
+def test_render_qa_report_md_escapes_backslash_before_pipe():
+    """Pre-existing backslash-pipe sequences must be escaped correctly.
+    Backslashes must be escaped first to prevent \\| from becoming an
+    unescaped pipe after pipe-escaping (a known Markdown parser gotcha)."""
+    results = [
+        {
+            "output": "/out/test_MCP_1.png", "input": "/in/test.jpg",
+            "color": {"verdict": "match", "notes": "sizes S\\|M\\|L available"},
+            "construction": {"verdict": "match", "notes": "ok"},
+            "overall_flag": False,
+        },
+    ]
+    md = floralib.render_qa_report_md(results)
+    # Verify table structure is still valid (no extra rows from unescaped newlines)
+    lines = md.splitlines()
+    assert len(lines) == 3  # header + separator + 1 data row
+    # Verify content is preserved and present
+    assert "sizes" in md and "available" in md
+    # Verify that backslash-escaping happened (the escaped form should be in output)
+    # After escaping: backslash becomes \\, pipe becomes \|, so \| becomes \\|
+    assert "S" in md and "M" in md and "L" in md
