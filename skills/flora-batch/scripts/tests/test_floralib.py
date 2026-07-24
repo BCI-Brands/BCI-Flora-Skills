@@ -113,3 +113,165 @@ def test_compose_state_in_progress():
     started = floralib.build_compose_state("/x", "tech_x", {"top": "a.jpg"}, 4.32)
     started["run_stage"] = "run_started"
     assert floralib.compose_state_in_progress(started) is True
+
+
+def test_resolve_qa_pairs_maps_outputs_to_inputs():
+    state = {
+        "input": "/photos",
+        "items": [
+            {"rel": "shirt.jpg", "stem": "shirt", "files": [
+                "/out/shirt_MCP_1.png", "/out/shirt_MCP_2.png"]},
+            {"rel": "sub/pants.jpg", "stem": "pants", "files": [
+                "/out/sub/pants_MCP_1.png"]},
+        ],
+    }
+    result = floralib.resolve_qa_pairs(state, ["shirt_MCP_1.png", "pants_MCP_1.png"])
+    assert result["pairs"] == [
+        {"output": "/out/shirt_MCP_1.png", "input": "/photos/shirt.jpg"},
+        {"output": "/out/sub/pants_MCP_1.png", "input": "/photos/sub/pants.jpg"},
+    ]
+    assert result["unresolved"] == []
+
+
+def test_resolve_qa_pairs_flags_unresolved_selection():
+    state = {
+        "input": "/photos",
+        "items": [{"rel": "shirt.jpg", "stem": "shirt", "files": ["/out/shirt_MCP_1.png"]}],
+    }
+    result = floralib.resolve_qa_pairs(state, ["shirt_MCP_1.png", "ghost_MCP_9.png"])
+    assert result["pairs"] == [{"output": "/out/shirt_MCP_1.png", "input": "/photos/shirt.jpg"}]
+    assert result["unresolved"] == ["ghost_MCP_9.png"]
+
+
+def test_resolve_qa_pairs_flags_ambiguous_basename_collision():
+    """A recursive batch (init.py --recurse) can produce two different input
+    photos that both output the same basename (e.g. red/shirt.jpg and
+    blue/shirt.jpg both yield shirt_MCP_1.png in their own subfolders). Picking
+    that basename is inherently ambiguous -- it must be reported, not guessed."""
+    state = {
+        "input": "/photos",
+        "items": [
+            {"rel": "red/shirt.jpg", "stem": "shirt", "files": [
+                "/out/red/shirt_MCP_1.png"]},
+            {"rel": "blue/shirt.jpg", "stem": "shirt", "files": [
+                "/out/blue/shirt_MCP_1.png"]},
+        ],
+    }
+    result = floralib.resolve_qa_pairs(state, ["shirt_MCP_1.png"])
+    assert result["pairs"] == []
+    assert result["ambiguous"] == ["shirt_MCP_1.png"]
+    assert result["unresolved"] == []
+
+
+def test_qa_overall_flag_clean_match_is_not_flagged():
+    assert floralib.qa_overall_flag("match", "match") is False
+
+
+def test_qa_overall_flag_any_non_match_is_flagged():
+    assert floralib.qa_overall_flag("minor_shift", "match") is True
+    assert floralib.qa_overall_flag("match", "mismatch") is True
+    assert floralib.qa_overall_flag("minor_shift", "minor_deviation") is True
+
+
+def test_render_qa_report_md_builds_table_with_flag_column():
+    results = [
+        {
+            "output": "/out/shirt_MCP_1.png", "input": "/in/shirt.jpg",
+            "color": {"verdict": "match", "notes": "navy matches"},
+            "construction": {"verdict": "match", "notes": "all buttons present"},
+            "overall_flag": False,
+        },
+        {
+            "output": "/out/shirt_MCP_2.png", "input": "/in/shirt.jpg",
+            "color": {"verdict": "mismatch", "notes": "navy rendered bright blue"},
+            "construction": {"verdict": "match", "notes": "ok"},
+            "overall_flag": True,
+        },
+    ]
+    md = floralib.render_qa_report_md(results)
+    assert md.splitlines()[0].startswith("| Output |")
+    assert "shirt_MCP_1.png" in md
+    assert "shirt_MCP_2.png" in md
+    assert "mismatch" in md
+    assert "navy rendered bright blue" in md
+
+
+def test_render_qa_report_md_escapes_pipe_in_notes():
+    """Pipe characters in notes must be escaped to avoid splitting columns."""
+    results = [
+        {
+            "output": "/out/test_MCP_1.png", "input": "/in/test.jpg",
+            "color": {"verdict": "match", "notes": "collar | cuffs mismatched"},
+            "construction": {"verdict": "match", "notes": "ok"},
+            "overall_flag": False,
+        },
+    ]
+    md = floralib.render_qa_report_md(results)
+    # Verify escaped pipe appears in output
+    assert "\\|" in md
+    # Verify that the escaped pipe is present instead of raw pipe in notes
+    assert "collar \\| cuffs mismatched" in md
+
+
+def test_render_qa_report_md_replaces_newline_in_notes():
+    """Newlines in notes must be replaced to maintain one-row-per-line structure."""
+    results = [
+        {
+            "output": "/out/test_MCP_1.png", "input": "/in/test.jpg",
+            "color": {"verdict": "match", "notes": "line1\nline2"},
+            "construction": {"verdict": "match", "notes": "ok"},
+            "overall_flag": False,
+        },
+    ]
+    md = floralib.render_qa_report_md(results)
+    # Verify no raw newline inside the data row
+    lines = md.splitlines()
+    assert len(lines) == 3  # header + separator + 1 data row (not 4+)
+    assert "line1 line2" in md  # newline replaced with space
+
+
+def test_render_qa_report_md_escapes_backslash_before_pipe():
+    """Pre-existing backslash-pipe sequences must be escaped correctly.
+    Backslashes must be escaped first to prevent \\| from becoming an
+    unescaped pipe after pipe-escaping (which would leave a literal |
+    that Markdown parsers read as a column delimiter).
+
+    When _sanitize_table_cell processes "S\\|M" (S, backslash, pipe, M):
+    1. Replace \ with \\: produces S\\|M (doubled backslash, then pipe)
+    2. Replace | with \\|: produces S\\\|M (triple backslash, then pipe)
+    3. Result contains: three backslashes, one pipe
+
+    This test directly asserts the fully-escaped form to catch any reversion.
+    """
+    results = [
+        {
+            "output": "/out/test_MCP_1.png", "input": "/in/test.jpg",
+            "color": {"verdict": "match", "notes": "S\\|M"},
+            "construction": {"verdict": "match", "notes": "ok"},
+            "overall_flag": False,
+        },
+    ]
+    md = floralib.render_qa_report_md(results)
+    # Assert the exact escaped sequence is present in the output.
+    # The string "S\\\\\\|M" is a Python literal representing:
+    # S, backslash, backslash, backslash, pipe, M
+    # This is the ONLY safe form that prevents Markdown from reading the pipe
+    # as a column delimiter. Any deviation (e.g., S\\|M with only 2 backslashes)
+    # means the bug is back.
+    assert "S\\\\\\|M" in md, f"Expected fully-escaped S\\\\\\|M not found in: {md}"
+
+
+def test_render_qa_report_md_replaces_carriage_return_in_notes():
+    """A lone \\r (e.g. from \\r\\n line endings) must not survive into the
+    rendered cell -- it would leave a stray carriage return in the table."""
+    results = [
+        {
+            "output": "/out/test_MCP_1.png", "input": "/in/test.jpg",
+            "color": {"verdict": "match", "notes": "line1\rline2"},
+            "construction": {"verdict": "match", "notes": "ok"},
+            "overall_flag": False,
+        },
+    ]
+    md = floralib.render_qa_report_md(results)
+    assert "\r" not in md
+    assert "line1 line2" in md

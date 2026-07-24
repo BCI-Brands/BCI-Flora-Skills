@@ -129,3 +129,81 @@ def compose_state_in_progress(state):
         if v.get("asset_id") or v.get("stage", "pending") != "pending":
             return True
     return False
+
+
+def resolve_qa_pairs(state, selected_outputs):
+    """Map selected per-image output filenames back to their input photo, using
+    the existing batch_state.json record -- item['files'] holds the downloaded
+    output paths (set by download.py), item['rel'] the input's path relative to
+    state['input']. This is a lookup, not new tracking. Per-image batches only;
+    compose (multi-input) resolution is out of scope for v1 (see
+    docs/specs/garment-qa-comparison.md, Open Question 1).
+
+    A recursive batch (init.py --recurse, mirror/sibling convention) can have
+    two different input photos in different subfolders produce outputs with
+    the identical basename (e.g. red/shirt.jpg and blue/shirt.jpg both yield
+    shirt_MCP_1.png in their own output subfolders). If a basename maps to
+    two items with different resolved input paths, picking one would silently
+    pair the user's selection with a possibly-wrong reference photo -- never
+    guess; surface it instead (same philosophy as map_files_to_roles above,
+    which splits unmatched_files/unfilled_roles rather than guessing).
+
+    Returns {"pairs": [{"output","input"}, ...], "unresolved": [name, ...],
+    "ambiguous": [name, ...]}. A selected name not present in state at all
+    goes into "unresolved"; a selected name whose basename collides across
+    different input photos goes into "ambiguous" -- a distinct failure mode,
+    never silently resolved into "pairs".
+    """
+    by_basename = {}
+    ambiguous_basenames = set()
+    for item in state.get("items", []):
+        input_path = os.path.join(state["input"], item["rel"])
+        for f in item.get("files", []):
+            basename = os.path.basename(f)
+            existing = by_basename.get(basename)
+            if existing is not None and existing["input"] != input_path:
+                ambiguous_basenames.add(basename)
+                continue
+            by_basename[basename] = {"output": f, "input": input_path}
+    pairs, unresolved, ambiguous = [], [], []
+    for name in selected_outputs:
+        if name in ambiguous_basenames:
+            ambiguous.append(name)
+        elif name in by_basename:
+            pairs.append(by_basename[name])
+        else:
+            unresolved.append(name)
+    return {"pairs": pairs, "unresolved": unresolved, "ambiguous": ambiguous}
+
+
+def qa_overall_flag(color_verdict, construction_verdict):
+    """True unless BOTH checks are a clean 'match' -- minor_shift/minor_deviation
+    and mismatch all count as worth a human look. Keeps the flag decision
+    deterministic instead of asking Claude to self-report it."""
+    return not (color_verdict == "match" and construction_verdict == "match")
+
+
+def _sanitize_table_cell(text):
+    """Sanitize free-text for safe insertion into Markdown table cells.
+    Escapes backslashes and pipe characters (which delimit columns) and replaces
+    newlines and carriage returns with spaces (which would break single-row
+    requirement). Backslashes must be escaped first to prevent pre-existing \\|
+    sequences from becoming unescaped pipes after pipe-escaping."""
+    return text.replace("\\", "\\\\").replace("|", "\\|").replace("\n", " ").replace("\r", " ")
+
+
+def render_qa_report_md(results):
+    """results: [{"output","input","color":{"verdict","notes"},
+    "construction":{"verdict","notes"},"overall_flag"}, ...]. Returns a
+    Markdown table -- the human-readable half of the QA report (the other
+    half is the same records dumped as qa_report.json)."""
+    lines = ["| Output | Color | Construction | Flagged |", "|---|---|---|---|"]
+    for r in results:
+        c, k = r["color"], r["construction"]
+        lines.append("| %s | %s — %s | %s — %s | %s |" % (
+            os.path.basename(r["output"]),
+            c["verdict"], _sanitize_table_cell(c["notes"]),
+            k["verdict"], _sanitize_table_cell(k["notes"]),
+            "yes" if r["overall_flag"] else "no",
+        ))
+    return "\n".join(lines)

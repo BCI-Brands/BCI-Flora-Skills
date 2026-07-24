@@ -86,6 +86,37 @@ Handle a folder that represents ONE look like this:
 
 Many looks = one subfolder per look = one run each; throttle as usual.
 
+## Garment QA (after the user picks favorites)
+
+Once the user has reviewed the contact sheet / outputs and told you which ones they like, check the picks for two failure modes before calling the batch done: **color drift** and **construction drift**. **Per-image batches only in v1** — compose (multi-input) runs aren't supported yet (see `docs/specs/garment-qa-comparison.md`).
+
+**Zero additional Flora spend.** This step makes no MCP `run`/`technique` calls — only local file reads plus your own vision.
+
+1. **Resolve** the picks back to their input photos: `python3 scripts/qa_resolve.py --state batch_state.json --selected out1.png,out2.png` → writes `qa_manifest.json` (`[{"output","input"}, ...]`). If it prints `UNRESOLVED`, those filenames don't match anything in `batch_state.json` — confirm the spelling with the user rather than guessing.
+2. **Judge each pair** by reading the `output` and `input` images directly and scoring them against the rubrics below. If you can't see a detail clearly, say so in `notes` instead of forcing a verdict.
+3. **Write your verdicts** to `qa_results.json`: `[{"output":path,"input":path,"color":{"verdict":...,"notes":...},"construction":{"verdict":...,"notes":...}}, ...]`.
+4. **Render the report:** `python3 scripts/qa_report.py --results qa_results.json --out-dir DIR` → writes `DIR/qa_report.json` + `DIR/qa_report.md`, and prints only the flagged items.
+5. **Relay only the flagged items** to the user, by filename, with the verdict and note — not a full dump of every pair checked.
+
+**Color rubric**
+
+| Check | Detail |
+|---|---|
+| Hue family | Compare hue *family* (red vs. orange vs. pink) — your vision isn't calibrated for exact colorimetry, don't claim pixel-level precision. |
+| Perceptible shift | Flag any shift big enough a human would call it "a different color" (navy → bright blue, black → dark grey). |
+| Multi-color coverage | For multi-color garments/prints, check all major input colors are present in the output, not just the dominant one. |
+| Verdict | `match` / `minor_shift` / `mismatch` |
+
+**Construction rubric**
+
+| Check | Detail |
+|---|---|
+| Garment type and fit | Same silhouette/cut (crew vs. v-neck, long vs. short sleeve, etc.). |
+| Distinguishing features | Buttons, zippers, pockets, collar type, hems, drawstrings, logos/graphics, text, embroidery — present and correct. |
+| Pattern/texture | Stripes, plaids, prints reproduced and recognizable. Position/orientation may shift naturally with model pose; the pattern itself should not change. |
+| Hallucinations vs. omissions | Flag separately: features **added** in the output that weren't in the input, vs. features **missing** from the output that were in the input. |
+| Verdict | `match` / `minor_deviation` / `mismatch` |
+
 ## Hard-won rules — do NOT skip (each caused a real failure)
 
 | Rule | Why |
@@ -111,6 +142,8 @@ Local drivers live in `scripts/` and are **state-file-driven** (read the state J
 - `scripts/compose.py` — multi-input: map files → roles, write `compose_state.json`, print the correct cost gate.
 - `scripts/contact_sheet.py` — portable self-contained review gallery (relative `<img>` refs; opens by double-click; press-D dev mode). No headless Chrome.
 - `scripts/review.py` — legacy comparison HTML for headless-Chrome screenshotting (prefer `contact_sheet.py`).
+- `scripts/qa_resolve.py` — map user-picked output filenames back to their input photos, write `qa_manifest.json` (per-image only, v1).
+- `scripts/qa_report.py` — render Claude's judged verdicts into `qa_report.json` + `qa_report.md`, print only the flagged items.
 - `scripts/tests/` — `pytest` unit tests for `floralib` + `contact_sheet` (`python3 -m pytest skills/flora-batch/scripts/tests -q`).
 
 The orchestrating agent makes the FLORA MCP calls (reserve / complete / run / poll) and runs these scripts for byte transfers. Reservation/output data crosses from the sandbox to local by writing a JSON file yourself (the 100 KB `execute` cap means there is no auto-file-bridge — see the hard-won rules).
@@ -124,6 +157,7 @@ The orchestrating agent makes the FLORA MCP calls (reserve / complete / run / po
 - Using `techniques.runs.create` (default workspace) when a specific workspace must pay — use `runs.startTechnique({workspace_id})`.
 - Multiplying the cost gate by "# outputs", or by "# files" for a compose look. One look = one run.
 - Trusting a local path across a long run. Re-`find` the state file if it moves.
+- Skipping the Garment QA rubric on picked outputs, or forcing a verdict when a detail isn't clearly visible — say so in `notes` instead.
 
 ## Sharing
 
