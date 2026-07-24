@@ -18,3 +18,8 @@ batch_state.json
 *_MCP_*.png
 *_MCP_*.jpg
 *_MCP_*.jpeg
+
+# graphify: machine-local paths + regenerable extraction cache
+graphify-out/.graphify_python
+graphify-out/.graphify_root
+graphify-out/cache/
