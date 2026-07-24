@@ -535,9 +535,8 @@ Replace with:
 
 - [ ] **Step 4: Verify the edits landed**
 
-Run:
+Run (from the repo root you're already working in — do NOT `cd` to a different checkout):
 ```bash
-cd /Users/fbrinadze/projects/bci-flora-skills
 grep -c "## Garment QA (after the user picks favorites)" skills/flora-batch/SKILL.md   # expect 1
 grep -c "qa_resolve.py" skills/flora-batch/SKILL.md                                    # expect >=2
 grep -c "qa_report.py" skills/flora-batch/SKILL.md                                     # expect >=2
@@ -611,13 +610,12 @@ Replace with:
 
 - [ ] **Step 4: Verify + run the full test suite**
 
-Run:
+Run (from the repo root you're already working in — do NOT `cd` to a different checkout; use whatever `python3`/pytest invocation this worktree's other tasks have been using, since system `python3` may not have `pytest` installed):
 ```bash
-cd /Users/fbrinadze/projects/bci-flora-skills
 grep -c "## Garment QA" README.md              # expect 1
 grep -c "qa_resolve.py" README.md               # expect 1
 grep -c "planned, not built" README.md          # expect 0
-python3 -m pytest skills/flora-batch/scripts/tests -q
+python3 -m pytest skills/flora-batch/scripts/tests -q   # or the venv pytest this worktree uses
 ```
 Expected: `1`, `1`, `0`, and all tests pass.
 
