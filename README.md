@@ -17,7 +17,7 @@ Each teammate needs, on their own machine:
 | Requirement | Notes |
 |---|---|
 | **Claude Code** | The skill uses your local shell to move image bytes to/from Flora. It does **not** run on claude.ai web. |
-| **Flora MCP connected** | Connect your own Flora account via Claude's Connectors (or `claude mcp add`). The skill finds it automatically — no IDs to configure. |
+| **Flora MCP connected** | This repo ships a project-scoped `.mcp.json`, so Claude Code detects the `flora` server automatically when you open it here — approve it, then authenticate (OAuth runs on first tool call). No account/workspace IDs to configure — the skill finds them itself. Full install docs: [developer.flora.ai/mcp/install/claude-code](https://developer.flora.ai/mcp/install/claude-code/). |
 | **Flora credits** | Each run bills the technique's `run_cost` — cost = **(number of runs) × run_cost** (per-image techniques: once per image; compose/multi-input techniques: once per look). |
 | **`python3` + `curl`** | Standard on macOS — nothing to install. |
 
@@ -38,6 +38,20 @@ ls ~/.claude/skills/flora-batch/SKILL.md   # should print the path
 ```
 
 Skills are auto-discovered — start (or restart) a Claude Code session and `flora-batch` is available.
+
+### Connecting Flora MCP
+
+This repo's `.mcp.json` (project scope) means Claude Code offers to connect `flora` automatically the first time you open the repo — just approve it. If you're using the skill outside this repo, or want it available in every project, add it yourself:
+
+```bash
+# project scope (this repo — already configured via .mcp.json)
+claude mcp add --transport http --scope project flora https://agents.flora.ai/mcp
+
+# user scope (every project on your machine)
+claude mcp add --transport http --scope user flora https://agents.flora.ai/mcp
+```
+
+Authentication is OAuth and runs automatically the first time a Flora tool is called — no API key to paste in. Verify with `/mcp` inside a Claude Code session; if it shows "pending," ask Claude to call a Flora tool (e.g. "list my Flora techniques") to trigger the OAuth flow. Full reference: [developer.flora.ai/mcp/install/claude-code](https://developer.flora.ai/mcp/install/claude-code/).
 
 ---
 
@@ -74,7 +88,7 @@ Flora occasionally changes its backend (e.g. the upload host), which can break o
 | Symptom | What's happening / fix |
 |---|---|
 | **Claude doesn't see the skill** | Confirm `~/.claude/skills/flora-batch/SKILL.md` exists, then start a fresh Claude Code session. |
-| **"Flora MCP not connected"** | Connect your Flora account in Claude's Connectors (or `claude mcp add`) and retry. |
+| **"Flora MCP not connected"** | Run `/mcp` to check status. If `flora` is missing, run `claude mcp add --transport http --scope project flora https://agents.flora.ai/mcp` (or `user` scope). If it's "pending," ask Claude to call a Flora tool to trigger the OAuth flow, then retry. |
 | **`insufficient_credits` / `402`** | Top up Flora credits. Blocked images stay pending; resume the batch after topping up. |
 | **Upload URL expired (`400`/`403`) mid-run** | Expected on large batches — signed URLs live ~15 min. The skill re-reserves and re-uploads automatically; just let it resume. |
 | **`502` / `GENERATION_PROVIDER_TIMEOUT`** | Transient Flora load. Runs use idempotency keys, so resuming retries safely with no double-charge. |
