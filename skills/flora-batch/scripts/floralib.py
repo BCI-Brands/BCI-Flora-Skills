@@ -129,3 +129,28 @@ def compose_state_in_progress(state):
         if v.get("asset_id") or v.get("stage", "pending") != "pending":
             return True
     return False
+
+
+def resolve_qa_pairs(state, selected_outputs):
+    """Map selected per-image output filenames back to their input photo, using
+    the existing batch_state.json record -- item['files'] holds the downloaded
+    output paths (set by download.py), item['rel'] the input's path relative to
+    state['input']. This is a lookup, not new tracking. Per-image batches only;
+    compose (multi-input) resolution is out of scope for v1 (see
+    docs/specs/garment-qa-comparison.md, Open Question 1).
+
+    Returns {"pairs": [{"output","input"}, ...], "unresolved": [name, ...]} --
+    any selected name not found in state is surfaced, never guessed at.
+    """
+    by_basename = {}
+    for item in state.get("items", []):
+        input_path = os.path.join(state["input"], item["rel"])
+        for f in item.get("files", []):
+            by_basename[os.path.basename(f)] = {"output": f, "input": input_path}
+    pairs, unresolved = [], []
+    for name in selected_outputs:
+        if name in by_basename:
+            pairs.append(by_basename[name])
+        else:
+            unresolved.append(name)
+    return {"pairs": pairs, "unresolved": unresolved}

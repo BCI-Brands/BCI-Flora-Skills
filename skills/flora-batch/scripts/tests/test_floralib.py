@@ -113,3 +113,31 @@ def test_compose_state_in_progress():
     started = floralib.build_compose_state("/x", "tech_x", {"top": "a.jpg"}, 4.32)
     started["run_stage"] = "run_started"
     assert floralib.compose_state_in_progress(started) is True
+
+
+def test_resolve_qa_pairs_maps_outputs_to_inputs():
+    state = {
+        "input": "/photos",
+        "items": [
+            {"rel": "shirt.jpg", "stem": "shirt", "files": [
+                "/out/shirt_MCP_1.png", "/out/shirt_MCP_2.png"]},
+            {"rel": "sub/pants.jpg", "stem": "pants", "files": [
+                "/out/sub/pants_MCP_1.png"]},
+        ],
+    }
+    result = floralib.resolve_qa_pairs(state, ["shirt_MCP_1.png", "pants_MCP_1.png"])
+    assert result["pairs"] == [
+        {"output": "/out/shirt_MCP_1.png", "input": "/photos/shirt.jpg"},
+        {"output": "/out/sub/pants_MCP_1.png", "input": "/photos/sub/pants.jpg"},
+    ]
+    assert result["unresolved"] == []
+
+
+def test_resolve_qa_pairs_flags_unresolved_selection():
+    state = {
+        "input": "/photos",
+        "items": [{"rel": "shirt.jpg", "stem": "shirt", "files": ["/out/shirt_MCP_1.png"]}],
+    }
+    result = floralib.resolve_qa_pairs(state, ["shirt_MCP_1.png", "ghost_MCP_9.png"])
+    assert result["pairs"] == [{"output": "/out/shirt_MCP_1.png", "input": "/photos/shirt.jpg"}]
+    assert result["unresolved"] == ["ghost_MCP_9.png"]
