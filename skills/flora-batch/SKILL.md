@@ -112,7 +112,10 @@ Once the user has reviewed the contact sheet / outputs and told you which ones t
 | Check | Detail |
 |---|---|
 | Garment type and fit | Same silhouette/cut (crew vs. v-neck, long vs. short sleeve, etc.). |
-| Distinguishing features | Buttons, zippers, pockets, collar type, hems, drawstrings, logos/graphics, text, embroidery — present and correct. |
+| Sleeves | Length, cuff style (ribbed, buttoned, rolled), and count match — no added/dropped/lengthened sleeves. |
+| Collar | Type (crew, v-neck, collared/polo, hood) and construction (ribbing, popped vs. flat) match. |
+| Fasteners | Buttons, zippers, snaps, hooks, drawstrings — correct type, count, and placement; none added or missing. |
+| Distinguishing features | Pockets, hems, logos/graphics, text, embroidery — present and correct. |
 | Pattern/texture | Stripes, plaids, prints reproduced and recognizable. Position/orientation may shift naturally with model pose; the pattern itself should not change. |
 | Hallucinations vs. omissions | Flag separately: features **added** in the output that weren't in the input, vs. features **missing** from the output that were in the input. |
 | Verdict | `match` / `minor_deviation` / `mismatch` |
