@@ -92,7 +92,7 @@ Once the user has reviewed the contact sheet / outputs and told you which ones t
 
 **Zero additional Flora spend.** This step makes no MCP `run`/`technique` calls — only local file reads plus your own vision.
 
-1. **Resolve** the picks back to their input photos: `python3 scripts/qa_resolve.py --state batch_state.json --selected out1.png,out2.png` → writes `qa_manifest.json` (`[{"output","input"}, ...]`). If it prints `UNRESOLVED`, those filenames don't match anything in `batch_state.json` — confirm the spelling with the user rather than guessing.
+1. **Resolve** the picks back to their input photos: `python3 scripts/qa_resolve.py --state batch_state.json --selected out1.png,out2.png` → writes `qa_manifest.json` (`[{"output","input"}, ...]`). If it prints `UNRESOLVED` (filename not in `batch_state.json`) or `AMBIGUOUS` (same basename from two different inputs), no manifest is written — confirm with the user rather than guessing, then re-run.
 2. **Judge each pair** by reading the `output` and `input` images directly and scoring them against the rubrics below. If you can't see a detail clearly, say so in `notes` instead of forcing a verdict.
 3. **Write your verdicts** to `qa_results.json`: `[{"output":path,"input":path,"color":{"verdict":...,"notes":...},"construction":{"verdict":...,"notes":...}}, ...]`.
 4. **Render the report:** `python3 scripts/qa_report.py --results qa_results.json --out-dir DIR` → writes `DIR/qa_report.json` + `DIR/qa_report.md`, and prints only the flagged items.
@@ -144,7 +144,7 @@ Local drivers live in `scripts/` and are **state-file-driven** (read the state J
 - `scripts/download.py` — two modes: per-image `--state`, or compose `--outputs outputs.json --out-dir DIR` (names by `output_id`). Host-aware.
 - `scripts/compose.py` — multi-input: map files → roles, write `compose_state.json`, print the correct cost gate.
 - `scripts/contact_sheet.py` — portable self-contained review gallery, two modes: per-image `--state batch_state.json`, or compose `--dir DIR --outputs outputs.json`. Relative `<img>` refs; opens by double-click; press-D dev mode. No headless Chrome.
-- `scripts/qa_resolve.py` — map user-picked output filenames back to their input photos, write `qa_manifest.json` (per-image only, v1).
+- `scripts/qa_resolve.py` — map user-picked output filenames back to their input photos, write `qa_manifest.json` (per-image only, v1). Written only when EVERY pick resolves — unresolved/ambiguous picks exit 1 with no manifest.
 - `scripts/qa_report.py` — render Claude's judged verdicts into `qa_report.json` + `qa_report.md`, print only the flagged items.
 - `scripts/tests/` — `pytest` unit tests for `floralib` + `contact_sheet` (`python3 -m pytest skills/flora-batch/scripts/tests -q`).
 
