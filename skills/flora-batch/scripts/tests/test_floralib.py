@@ -355,3 +355,33 @@ def test_build_curl_upload_args_preserves_field_order_and_url():
     assert "https://u" in args
     joined = " ".join(args)
     assert joined.index("Content-Type=image/jpeg") < joined.index("key=k")
+
+
+def test_validate_qa_results_accepts_canonical_vocabulary():
+    results = [{"output": "/o/a.png", "input": "/i/a.jpg",
+                "color": {"verdict": "minor_shift", "notes": ""},
+                "construction": {"verdict": "minor_deviation", "notes": ""}}]
+    assert floralib.validate_qa_results(results) == []
+
+
+def test_validate_qa_results_flags_unknown_and_cross_domain_verdicts():
+    results = [
+        {"output": "/o/a.png", "input": "/i/a.jpg",
+         "color": {"verdict": "Match", "notes": ""},                 # wrong case
+         "construction": {"verdict": "match", "notes": ""}},
+        {"output": "/o/b.png", "input": "/i/b.jpg",
+         "color": {"verdict": "match", "notes": ""},
+         "construction": {"verdict": "minor_shift", "notes": ""}},   # color vocab in construction
+    ]
+    problems = floralib.validate_qa_results(results)
+    assert len(problems) == 2
+    assert any("a.png" in p and "Match" in p for p in problems)
+    assert any("b.png" in p and "minor_shift" in p for p in problems)
+
+
+def test_validate_qa_results_flags_missing_verdict_key():
+    results = [{"output": "/o/a.png", "input": "/i/a.jpg",
+                "color": {"notes": "forgot verdict"},
+                "construction": {"verdict": "match", "notes": ""}}]
+    problems = floralib.validate_qa_results(results)
+    assert len(problems) == 1 and "None" in problems[0]

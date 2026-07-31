@@ -259,3 +259,24 @@ def build_curl_upload_args(url, form_fields, filepath):
         args += ["--form-string", "%s=%s" % (k, v)]
     args += ["-F", "file=@%s" % filepath]
     return args
+
+
+COLOR_VERDICTS = frozenset(["match", "minor_shift", "mismatch"])
+CONSTRUCTION_VERDICTS = frozenset(["match", "minor_deviation", "mismatch"])
+
+
+def validate_qa_results(results):
+    """Problem strings for records whose verdicts are outside the canonical
+    vocabulary ([] == all valid). Typos would flag conservatively downstream
+    (qa_overall_flag treats any non-'match' as flagged) but corrupt the
+    machine-readable report the PhotoStudio app will consume -- catch them."""
+    problems = []
+    for i, r in enumerate(results):
+        name = os.path.basename(r.get("output", "record %d" % i))
+        c = (r.get("color") or {}).get("verdict")
+        k = (r.get("construction") or {}).get("verdict")
+        if c not in COLOR_VERDICTS:
+            problems.append("%s: unknown color verdict %r" % (name, c))
+        if k not in CONSTRUCTION_VERDICTS:
+            problems.append("%s: unknown construction verdict %r" % (name, k))
+    return problems
