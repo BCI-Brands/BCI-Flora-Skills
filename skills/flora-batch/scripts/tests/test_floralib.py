@@ -233,7 +233,7 @@ def test_render_qa_report_md_replaces_newline_in_notes():
 
 
 def test_render_qa_report_md_escapes_backslash_before_pipe():
-    """Pre-existing backslash-pipe sequences must be escaped correctly.
+    r"""Pre-existing backslash-pipe sequences must be escaped correctly.
     Backslashes must be escaped first to prevent \\| from becoming an
     unescaped pipe after pipe-escaping (which would leave a literal |
     that Markdown parsers read as a column delimiter).

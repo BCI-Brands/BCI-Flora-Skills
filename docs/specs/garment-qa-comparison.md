@@ -1,6 +1,6 @@
 # Garment QA Comparison — Spec
 
-**Status:** planned, not built. Extends `flora-batch` after the existing contact-sheet review step.
+**Status:** shipped (v1, per-image batches only). Extends `flora-batch` after the existing contact-sheet review step. Compose (multi-input) technique support remains out of scope — see Open Question 1.
 
 Flora sometimes renders a garment's color or construction wrong, and nothing today checks the output against the input photo before it ships.
 
