@@ -107,11 +107,10 @@ bci-flora-skills/
         └── scripts/
             ├── floralib.py      # shared helpers: downloads, cost, role-mapping, GCS lint, compose state
             ├── init.py          # per-image: enumerate + build output tree + write state
-            ├── upload.py        # reservations + state -> GCS/ImageKit POST per image
+            ├── upload.py        # reservations + state (rel-keyed) -> GCS/ImageKit POST per image
             ├── download.py      # per-image (--state) or compose (--outputs/--out-dir); host-aware
             ├── compose.py       # multi-input: map files -> roles, correct cost gate
             ├── contact_sheet.py # portable review gallery, no headless Chrome
-            ├── review.py        # legacy headless-Chrome comparison HTML
             ├── qa_resolve.py    # map picked outputs back to input photos (per-image, v1)
             ├── qa_report.py     # render QA verdicts into qa_report.json/.md
             └── tests/           # pytest unit tests

@@ -4,9 +4,10 @@ refs (works by double-click, no server, no headless Chrome). Press D for a
 developer mode that copies a tile's name on click.
 
 Usage:
+  contact_sheet.py --state batch_state.json          (per-image batch)
   contact_sheet.py --dir DIR --outputs OUTPUTS.json \
-      [--title T] [--subtitle S] [--inputs role=FILE,role=FILE]
-Writes DIR/_contact_sheet.html.
+      [--title T] [--subtitle S] [--inputs role=FILE,role=FILE]   (compose)
+Writes _contact_sheet.html into the output folder.
 """
 import argparse, os, json, re, html as _html
 
