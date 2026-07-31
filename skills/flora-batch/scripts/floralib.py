@@ -43,6 +43,25 @@ def save_json_atomic(obj, path, indent=2):
     os.replace(tmp, path)
 
 
+def match_reservations(reservations, items):
+    """Match rel-keyed upload reservations ({rel: {asset_id,url,form_fields}})
+    to state items. Only items still at stage 'pending' need one. Replaces the
+    old positional-list pairing, where a same-length wrong-order file silently
+    attached the wrong asset_id to the wrong image.
+
+    Returns {"matched": {rel: reservation}, "missing_rels": [...],
+    "unknown_rels": [...]} -- missing = pending item with no reservation,
+    unknown = reservation key not present in items at all (likely a typo)."""
+    all_rels = {it["rel"] for it in items}
+    pending = {it["rel"] for it in items if it.get("stage") == "pending"}
+    matched = {rel: r for rel, r in reservations.items() if rel in pending}
+    return {
+        "matched": matched,
+        "missing_rels": sorted(pending - set(reservations)),
+        "unknown_rels": sorted(set(reservations) - all_rels),
+    }
+
+
 def is_output_artifact(filename, suffix):
     """True if filename looks like a batch OUTPUT (<stem><suffix>_<n>.<ext>).
     Guards init.py enumeration: the 'same' convention writes outputs into the

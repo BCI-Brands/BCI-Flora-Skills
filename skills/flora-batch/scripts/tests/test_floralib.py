@@ -305,3 +305,33 @@ def test_is_output_artifact_ignores_plain_inputs():
 
 def test_is_output_artifact_respects_the_configured_suffix():
     assert floralib.is_output_artifact("shirt_MCP_1.png", "_AI") is False
+
+
+def test_match_reservations_matches_pending_items_by_rel():
+    items = [
+        {"rel": "a.jpg", "stage": "pending"},
+        {"rel": "b.jpg", "stage": "uploaded"},
+    ]
+    res = {"a.jpg": {"asset_id": "as_1", "url": "https://u", "form_fields": {}}}
+    m = floralib.match_reservations(res, items)
+    assert m["matched"] == {"a.jpg": res["a.jpg"]}
+    assert m["missing_rels"] == []
+    assert m["unknown_rels"] == []
+
+
+def test_match_reservations_flags_missing_pending_and_unknown_keys():
+    items = [
+        {"rel": "a.jpg", "stage": "pending"},
+        {"rel": "b.jpg", "stage": "pending"},
+    ]
+    res = {"a.jpg": {"asset_id": "as_1", "url": "https://u", "form_fields": {}},
+           "ghost.jpg": {"asset_id": "as_9", "url": "https://u", "form_fields": {}}}
+    m = floralib.match_reservations(res, items)
+    assert m["missing_rels"] == ["b.jpg"]
+    assert m["unknown_rels"] == ["ghost.jpg"]
+
+
+def test_match_reservations_uploaded_items_need_no_reservation():
+    items = [{"rel": "done.jpg", "stage": "uploaded"}]
+    m = floralib.match_reservations({}, items)
+    assert m == {"matched": {}, "missing_rels": [], "unknown_rels": []}
