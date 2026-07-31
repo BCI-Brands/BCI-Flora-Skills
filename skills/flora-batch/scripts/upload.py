@@ -19,7 +19,7 @@ for the agent to assets.retry() and re-run this script with fresh entries.
 """
 import argparse, os, json, subprocess, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from floralib import save_json_atomic, match_reservations
+from floralib import save_json_atomic, match_reservations, build_curl_upload_args
 
 def main():
     ap = argparse.ArgumentParser()
@@ -50,11 +50,7 @@ def main():
         src = os.path.join(IN, it["rel"])
         if not os.path.isfile(src):
             it["error"] = "missing source"; fail.append(it["rel"]); save(); continue
-        args = ["curl", "-sS", "--connect-timeout", "30", "--max-time", "300", "-o", "/dev/null",
-                "-w", "%{http_code}", "-X", "POST", r["url"]]
-        for k, v in r["form_fields"].items():
-            args += ["-F", f"{k}={v}"]
-        args += ["-F", f"file=@{src}"]          # file LAST
+        args = build_curl_upload_args(r["url"], r["form_fields"], src)
         p = subprocess.run(args, capture_output=True, text=True)
         code = p.stdout.strip()
         if code in ("200", "204"):

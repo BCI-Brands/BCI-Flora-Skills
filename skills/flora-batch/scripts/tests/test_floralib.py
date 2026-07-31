@@ -335,3 +335,23 @@ def test_match_reservations_uploaded_items_need_no_reservation():
     items = [{"rel": "done.jpg", "stage": "uploaded"}]
     m = floralib.match_reservations({}, items)
     assert m == {"matched": {}, "missing_rels": [], "unknown_rels": []}
+
+
+def test_build_curl_upload_args_uses_form_string_for_fields_and_F_only_for_file():
+    args = floralib.build_curl_upload_args(
+        "https://storage.googleapis.com/b/", {"key": "k/x.jpg", "policy": "@evil"}, "/in/x.jpg")
+    assert args[-2:] == ["-F", "file=@/in/x.jpg"]          # file part LAST, via -F
+    assert "--form-string" in args
+    i = args.index("--form-string")
+    assert args[i + 1] == "key=k/x.jpg"
+    assert "-F" not in args[:-2]                            # no -F except the file part
+    assert "policy=@evil" in args                           # sent literally via --form-string
+
+
+def test_build_curl_upload_args_preserves_field_order_and_url():
+    ff = {"Content-Type": "image/jpeg", "key": "k"}
+    args = floralib.build_curl_upload_args("https://u", ff, "/f.jpg")
+    assert args[args.index("-X") + 1] == "POST"
+    assert "https://u" in args
+    joined = " ".join(args)
+    assert joined.index("Content-Type=image/jpeg") < joined.index("key=k")

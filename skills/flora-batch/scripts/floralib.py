@@ -246,3 +246,16 @@ def render_qa_report_md(results):
             "yes" if r["overall_flag"] else "no",
         ))
     return "\n".join(lines)
+
+
+def build_curl_upload_args(url, form_fields, filepath):
+    """curl argv for one presigned-POST upload. Form fields go through
+    --form-string so a value starting with '@' or '<' is sent literally
+    (with -F curl would read a local file). Only the file part uses -F,
+    and it goes LAST (required by S3/GCS presigned POST)."""
+    args = ["curl", "-sS", "--connect-timeout", "30", "--max-time", "300",
+            "-o", "/dev/null", "-w", "%{http_code}", "-X", "POST", url]
+    for k, v in form_fields.items():
+        args += ["--form-string", "%s=%s" % (k, v)]
+    args += ["-F", "file=@%s" % filepath]
+    return args
