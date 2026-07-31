@@ -68,7 +68,7 @@ Stages: `pending → uploaded → run_started → outputs_ready → done` (or `r
 2. **Run** — per-image: `techniques.runs.create(...)` per image (**throttle**). Workspace-billed / compose: `runs.startTechnique({technique_id, workspace_id, inputs})` (see **Workspace billing** and **Compose techniques**). Persist `run_id`.
 3. **Poll** — nested runs: `techniques.runs.retrieve(run_id,{techniqueId})`; top-level/compose runs: `generations.retrieve(run_id)`. Poll with one short call (≤~24 s sleep + one retrieve) — long calls hit the code-server 502. `status` is truth; `progress` is coarse/non-linear. **Re-run** a `failed` run with a **fresh** idempotency key.
 4. **Download** — `curl` each output (`?tr=orig-true` for pristine) into the output convention: `<stem><suffix>_1.png`, `_2.png`.
-5. **Auto-review** (if `--review`, default on) — build a comparison contact sheet (original → outputs) + a short findings note (counts, exact $ charged, any off-looking conversions), rendered via headless Chrome.
+5. **Auto-review** (if `--review`, default on) — `python3 scripts/contact_sheet.py --state batch_state.json` builds a portable gallery (opens by double-click, no headless Chrome) + a short findings note (counts, exact $ charged, any off-looking conversions).
 
 ## Compose (multi-input) techniques
 
@@ -143,8 +143,7 @@ Local drivers live in `scripts/` and are **state-file-driven** (read the state J
 - `scripts/upload.py` — rel-keyed reservations file (`{"<rel>": {asset_id,url,form_fields}}`, pending items only) + state → GCS/ImageKit POST per image (auto-detects backend by form fields).
 - `scripts/download.py` — two modes: per-image `--state`, or compose `--outputs outputs.json --out-dir DIR` (names by `output_id`). Host-aware.
 - `scripts/compose.py` — multi-input: map files → roles, write `compose_state.json`, print the correct cost gate.
-- `scripts/contact_sheet.py` — portable self-contained review gallery (relative `<img>` refs; opens by double-click; press-D dev mode). No headless Chrome.
-- `scripts/review.py` — legacy comparison HTML for headless-Chrome screenshotting (prefer `contact_sheet.py`).
+- `scripts/contact_sheet.py` — portable self-contained review gallery, two modes: per-image `--state batch_state.json`, or compose `--dir DIR --outputs outputs.json`. Relative `<img>` refs; opens by double-click; press-D dev mode. No headless Chrome.
 - `scripts/qa_resolve.py` — map user-picked output filenames back to their input photos, write `qa_manifest.json` (per-image only, v1).
 - `scripts/qa_report.py` — render Claude's judged verdicts into `qa_report.json` + `qa_report.md`, print only the flagged items.
 - `scripts/tests/` — `pytest` unit tests for `floralib` + `contact_sheet` (`python3 -m pytest skills/flora-batch/scripts/tests -q`).
