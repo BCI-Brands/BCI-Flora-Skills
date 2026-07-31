@@ -1,103 +1,115 @@
-# Graph Report - .  (2026-07-24)
+# Graph Report - .  (2026-07-31)
 
 ## Corpus Check
-- Corpus is ~12,713 words - fits in a single context window. You may not need a graph.
+- 18 files · ~25,716 words
+- Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 94 nodes · 144 edges · 13 communities
-- Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 7 edges (avg confidence: 0.81)
-- Token cost: 0 input · 127,932 output
+- 176 nodes · 231 edges · 11 communities (10 shown, 1 thin omitted)
+- Extraction: 87% EXTRACTED · 13% INFERRED · 0% AMBIGUOUS · INFERRED: 31 edges (avg confidence: 0.83)
+- Token cost: 115,844 input · 0 output
 
 ## Community Hubs (Navigation)
-- [[_COMMUNITY_Compose (Multi-Input) Techniques|Compose (Multi-Input) Techniques]]
-- [[_COMMUNITY_Host-Aware Downloads|Host-Aware Downloads]]
-- [[_COMMUNITY_Batch State & Run Polling|Batch State & Run Polling]]
-- [[_COMMUNITY_Flora Run Routes & Workspace Billing|Flora Run Routes & Workspace Billing]]
-- [[_COMMUNITY_Contact Sheet Review Gallery|Contact Sheet Review Gallery]]
-- [[_COMMUNITY_Skill Deployment & Provenance|Skill Deployment & Provenance]]
-- [[_COMMUNITY_floralib Core & Reservation Validation|floralib Core & Reservation Validation]]
-- [[_COMMUNITY_LOOK 9 Hardening Story|LOOK 9 Hardening Story]]
+- [[_COMMUNITY_floralib Test Suite|floralib Test Suite]]
+- [[_COMMUNITY_Core floralib & Compose CLI|Core floralib & Compose CLI]]
+- [[_COMMUNITY_Garment QA Feature & CI|Garment QA Feature & CI]]
+- [[_COMMUNITY_Dev Workflow & Conventions|Dev Workflow & Conventions]]
+- [[_COMMUNITY_Contact Sheet Gallery|Contact Sheet Gallery]]
+- [[_COMMUNITY_Download Pipeline|Download Pipeline]]
+- [[_COMMUNITY_Docs & README|Docs & README]]
+- [[_COMMUNITY_Upload & Hard-Won Rules|Upload & Hard-Won Rules]]
+- [[_COMMUNITY_QA Report Rendering|QA Report Rendering]]
+- [[_COMMUNITY_Flora MCP Config|Flora MCP Config]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `flora-batch skill` - 29 edges
-2. `CLAUDE.md (repo guidance for Claude Code)` - 16 edges
-3. `README.md (BCI Flora Skills)` - 12 edges
-4. `floralib.py (shared pure, network-free helper module)` - 12 edges
-5. `estimate_cost()` - 7 edges
-6. `render_contact_sheet()` - 6 edges
-7. `output_variants()` - 6 edges
-8. `FLORA Batch Hardening & Multi-Input Implementation Plan (2026-07-22)` - 6 edges
-9. `compose.py — multi-input state + cost gate CLI` - 6 edges
-10. `LOOK 9 / front-pocket-2k-nfs run (motivating example)` - 6 edges
+1. `floralib.py (shared pure, network-free helper module)` - 10 edges
+2. `Garment QA Comparison Spec` - 10 edges
+3. `CLAUDE.md (repo guidance for Claude Code)` - 8 edges
+4. `FLORA Batch Runner (SKILL.md)` - 8 edges
+5. `Cost Gate (MANDATORY)` - 8 edges
+6. `main()` - 6 edges
+7. `render_contact_sheet()` - 6 edges
+8. `save_json_atomic()` - 6 edges
+9. `output_variants()` - 5 edges
+10. `plan_downloads()` - 5 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Copy-based (not symlinked) skill deployment` --semantically_similar_to--> `README.md (BCI Flora Skills)`  [INFERRED] [semantically similar]
-  .claude/skills/sync-flora-batch/SKILL.md → README.md
-- `contact_sheet.py — CLI wrapper for review gallery` --calls--> `render_contact_sheet()`  [EXTRACTED]
-  docs/superpowers/plans/2026-07-22-flora-batch-hardening-and-multi-input.md → skills/flora-batch/scripts/contact_sheet.py
-- `output_variants()` --references--> `floralib.py (shared pure, network-free helper module)`  [EXTRACTED]
-  skills/flora-batch/scripts/floralib.py → docs/superpowers/plans/2026-07-22-flora-batch-hardening-and-multi-input.md
-- `plan_downloads()` --references--> `floralib.py (shared pure, network-free helper module)`  [EXTRACTED]
+- `floralib.is_output_artifact` --semantically_similar_to--> `Cost Gate (MANDATORY)`  [INFERRED] [semantically similar]
+  docs/superpowers/plans/2026-07-31-flora-batch-hardening-2.md → skills/flora-batch/SKILL.md
+- `build_compose_state()` --references--> `floralib.py (shared pure, network-free helper module)`  [EXTRACTED]
   skills/flora-batch/scripts/floralib.py → docs/superpowers/plans/2026-07-22-flora-batch-hardening-and-multi-input.md
 - `estimate_cost()` --references--> `floralib.py (shared pure, network-free helper module)`  [EXTRACTED]
+  skills/flora-batch/scripts/floralib.py → docs/superpowers/plans/2026-07-22-flora-batch-hardening-and-multi-input.md
+- `map_files_to_roles()` --references--> `floralib.py (shared pure, network-free helper module)`  [EXTRACTED]
+  skills/flora-batch/scripts/floralib.py → docs/superpowers/plans/2026-07-22-flora-batch-hardening-and-multi-input.md
+- `output_variants()` --references--> `floralib.py (shared pure, network-free helper module)`  [EXTRACTED]
   skills/flora-batch/scripts/floralib.py → docs/superpowers/plans/2026-07-22-flora-batch-hardening-and-multi-input.md
 
 ## Import Cycles
 - None detected.
 
 ## Hyperedges (group relationships)
-- **floralib.py: pure, unit-tested helper functions extracted from CLI scripts** — skills_flora_batch_scripts_floralib_floralib, skills_flora_batch_scripts_floralib_output_variants, skills_flora_batch_scripts_floralib_plan_downloads, skills_flora_batch_scripts_floralib_estimate_cost, skills_flora_batch_scripts_floralib_map_files_to_roles, skills_flora_batch_scripts_floralib_validate_gcs_reservation, skills_flora_batch_scripts_floralib_build_compose_state [EXTRACTED 1.00]
-- **Compose (multi-input) technique workflow: role-map -> state -> cost gate -> run -> download -> review** — skills_flora_batch_skill_compose_technique, skills_flora_batch_scripts_compose_compose_module, skills_flora_batch_scripts_floralib_map_files_to_roles, skills_flora_batch_scripts_floralib_build_compose_state, skills_flora_batch_scripts_floralib_estimate_cost, skills_flora_batch_skill_compose_state_json, skills_flora_batch_scripts_contact_sheet_contact_sheet_module [INFERRED 0.85]
-- **Flora API hard-won rules cross-referenced across CLAUDE.md, flora-batch SKILL.md, and the hardening plan** — claude_overview, skills_flora_batch_skill_flora_batch, docs_superpowers_plans_2026_07_22_flora_batch_hardening_and_multi_input_plan, skills_flora_batch_skill_cost_gate [INFERRED 0.75]
+- **Garment QA Feature (spec -> plan -> shipped skill)** — docs_specs_garment_qa_comparison_spec, docs_superpowers_plans_2026_07_24_garment_qa_comparison_plan, skills_flora_batch_skill_garment_qa, skills_flora_batch_skill_qa_resolve_py, skills_flora_batch_skill_qa_report_py, docs_specs_garment_qa_comparison_color_drift, docs_specs_garment_qa_comparison_construction_drift [EXTRACTED 1.00]
+- **Checkpointed Resumable Batch Pattern** — skills_flora_batch_skill_batch_state_json, skills_flora_batch_skill_pipeline, skills_flora_batch_skill_sandbox_isolation, docs_superpowers_plans_2026_07_31_flora_batch_hardening_2_save_json_atomic [INFERRED 0.85]
+- **Spend Safety Guardrails** — skills_flora_batch_skill_cost_gate, skills_flora_batch_skill_idempotency_keys, docs_superpowers_plans_2026_07_31_flora_batch_hardening_2_is_output_artifact [INFERRED 0.85]
 
-## Communities (13 total, 0 thin omitted)
+## Communities (11 total, 1 thin omitted)
 
-### Community 0 - "Compose (Multi-Input) Techniques"
-Cohesion: 0.20
-Nodes (13): compose.py — multi-input state + cost gate CLI, main(), contact_sheet.py — CLI wrapper for review gallery, build_compose_state(), compose_state_in_progress(), estimate_cost(), map_files_to_roles(), Resumable state for one compose run: N role inputs -> 1 run -> named outputs. (+5 more)
+### Community 0 - "floralib Test Suite"
+Cohesion: 0.05
+Nodes (10): A recursive batch (init.py --recurse) can produce two different input     photos, Pipe characters in notes must be escaped to avoid splitting columns., Newlines in notes must be replaced to maintain one-row-per-line structure., Pre-existing backslash-pipe sequences must be escaped correctly.     Backslashes, A lone \\r (e.g. from \\r\\n line endings) must not survive into the     rendere, test_render_qa_report_md_escapes_backslash_before_pipe(), test_render_qa_report_md_escapes_pipe_in_notes(), test_render_qa_report_md_replaces_carriage_return_in_notes() (+2 more)
 
-### Community 2 - "Host-Aware Downloads"
-Cohesion: 0.27
-Nodes (10): dl(), download.py — host-aware, two-mode download CLI, download_outputs(), download_state(), main(), output_variants(), plan_downloads(), Ordered list of URLs to try when downloading one output.      ImageKit URLs try (+2 more)
+### Community 1 - "Core floralib & Compose CLI"
+Cohesion: 0.08
+Nodes (32): compose.py — multi-input state + cost gate CLI, main(), build_compose_state(), build_curl_upload_args(), compose_state_in_progress(), estimate_cost(), is_output_artifact(), map_files_to_roles() (+24 more)
 
-### Community 3 - "Batch State & Run Polling"
-Cohesion: 0.20
-Nodes (10): init.py — per-image enumerate + output tree + state init, review.py — legacy headless-Chrome comparison HTML, upload.py — reservations + state -> GCS/ImageKit POST, assets.retry (re-reserve an expired/failed upload), batch_state.json — per-image resumable checkpoint state, compose_state.json — compose-run resumable checkpoint state, flora-batch skill, media.flora.ai (already-full-res output host) (+2 more)
+### Community 2 - "Garment QA Feature & CI"
+Cohesion: 0.09
+Nodes (31): CI Workflow, lint-and-test Job, Chat-Driven Trigger, Claude-Vision Judgment Step, Color Drift, Color Rubric, Construction Drift, Construction Rubric (+23 more)
 
-### Community 4 - "Flora Run Routes & Workspace Billing"
+### Community 3 - "Dev Workflow & Conventions"
+Cohesion: 0.13
+Nodes (19): Copy-based (not symlinked) skill deployment, sync-flora-batch (slash command / skill), Feature-branch convention (never commit to main), Dev workflow (dated plan -> subagent-driven-development -> TDD), DRY/YAGNI convention (pure logic in floralib.py, thin scripts), pytest (unit test runner), ruff (pyflakes-only lint, select=["F"]), CLAUDE.md (repo guidance for Claude Code) (+11 more)
+
+### Community 4 - "Contact Sheet Gallery"
+Cohesion: 0.19
+Nodes (7): contact_sheet.py — CLI wrapper for review gallery, _fig(), groups_from_state(), main(), inputs: [(label, filename)]; groups: [(heading, [filename, ...])]. Returns HTML., Per-image mode: [(heading, [img path relative to state['output'], ...])]     for, render_contact_sheet()
+
+### Community 5 - "Download Pipeline"
+Cohesion: 0.31
+Nodes (9): dl(), download.py — host-aware, two-mode download CLI, download_outputs(), download_state(), main(), output_variants(), plan_downloads(), Ordered list of URLs to try when downloading one output.      ImageKit URLs try (+1 more)
+
+### Community 6 - "Docs & README"
 Cohesion: 0.25
-Nodes (9): Dev workflow (dated plan -> subagent-driven-development -> TDD), pytest (unit test runner), ruff (pyflakes-only lint, select=["F"]), CLAUDE.md (repo guidance for Claude Code), Google Cloud Storage (upload backend, presigned POST), generations.retrieve (poll top-level/compose runs), Idempotency-key retry pattern (same key vs fresh key), ImageKit (upload/CDN backend) (+1 more)
+Nodes (8): Architecture Decision Record (ADR), Keep a Changelog Format, README Structure Template, Technical Writer Agent, BCI Flora Skills, Cost Gate (README), flora-batch Skill, Flora MCP Connector
 
-### Community 5 - "Contact Sheet Review Gallery"
-Cohesion: 0.28
-Nodes (4): _fig(), main(), inputs: [(label, filename)]; groups: [(heading, [filename, ...])]. Returns HTML., render_contact_sheet()
+### Community 7 - "Upload & Hard-Won Rules"
+Cohesion: 0.38
+Nodes (7): floralib.build_curl_upload_args, floralib.match_reservations, 100 KB execute Output Cap, Hard-Won Rules, Idempotency Keys, Upload Backend Detection (ImageKit vs GCS), upload.py
 
-### Community 6 - "Skill Deployment & Provenance"
-Cohesion: 0.29
-Nodes (8): Copy-based (not symlinked) skill deployment, sync-flora-batch (slash command / skill), BCI team, Nicholas Swerdlowe (support contact), README.md (BCI Flora Skills), Pierrepont Advisors, Checkpointed, resumable state-file pattern, FLORA MCP connector
-
-### Community 7 - "floralib Core & Reservation Validation"
-Cohesion: 0.33
-Nodes (6): DRY/YAGNI convention (pure logic in floralib.py, thin scripts), floralib.py (shared pure, network-free helper module), Cheap lint for a GCS presigned-POST reservation after transcription.     Returns, validate_gcs_reservation(), conftest.py — puts scripts/ on sys.path for tests, test_floralib.py — unit tests for floralib functions
-
-### Community 8 - "LOOK 9 Hardening Story"
-Cohesion: 0.40
-Nodes (5): Feature-branch convention (never commit to main), LOOK 9 / front-pocket-2k-nfs run (motivating example), Correction: no auto file-bridge for oversized execute output, FLORA Batch Hardening & Multi-Input Implementation Plan (2026-07-22), runs.startTechnique (top-level route, bills a chosen workspace)
+### Community 8 - "QA Report Rendering"
+Cohesion: 0.50
+Nodes (5): floralib.qa_overall_flag, qa_report.py (planned CLI), floralib.render_qa_report_md, floralib.validate_qa_results, qa_report.py
 
 ## Knowledge Gaps
-- **13 isolated node(s):** `init.py — per-image enumerate + output tree + state init`, `upload.py — reservations + state -> GCS/ImageKit POST`, `review.py — legacy headless-Chrome comparison HTML`, `conftest.py — puts scripts/ on sys.path for tests`, `test_floralib.py — unit tests for floralib functions` (+8 more)
+- **16 isolated node(s):** `contact_sheet.py — CLI wrapper for review gallery`, `conftest.py — puts scripts/ on sys.path for tests`, `test_floralib.py — unit tests for floralib functions`, `ruff (pyflakes-only lint, select=["F"])`, `flora` (+11 more)
   These have ≤1 connection - possible missing edges or undocumented components.
+- **1 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `flora-batch skill` connect `Batch State & Run Polling` to `Compose (Multi-Input) Techniques`, `Host-Aware Downloads`, `Flora Run Routes & Workspace Billing`, `Skill Deployment & Provenance`, `floralib Core & Reservation Validation`, `LOOK 9 Hardening Story`?**
-  _High betweenness centrality (0.360) - this node is a cross-community bridge._
-- **Why does `floralib.py (shared pure, network-free helper module)` connect `floralib Core & Reservation Validation` to `Compose (Multi-Input) Techniques`, `Host-Aware Downloads`, `Batch State & Run Polling`, `Skill Deployment & Provenance`, `LOOK 9 Hardening Story`?**
-  _High betweenness centrality (0.211) - this node is a cross-community bridge._
-- **Why does `contact_sheet.py — CLI wrapper for review gallery` connect `Compose (Multi-Input) Techniques` to `Batch State & Run Polling`, `Contact Sheet Review Gallery`, `Skill Deployment & Provenance`?**
-  _High betweenness centrality (0.162) - this node is a cross-community bridge._
-- **What connects `inputs: [(label, filename)]; groups: [(heading, [filename, ...])]. Returns HTML.`, `Ordered list of URLs to try when downloading one output.      ImageKit URLs try`, `Map compose-run outputs to (url, dest_path); dest = out_dir/<output_id>.png.` to the rest of the system?**
-  _21 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `floralib Unit Tests` be split into smaller, more focused modules?**
-  _Cohesion score 0.14285714285714285 - nodes in this community are weakly interconnected._
+- **Why does `floralib.py (shared pure, network-free helper module)` connect `Dev Workflow & Conventions` to `Core floralib & Compose CLI`, `Download Pipeline`?**
+  _High betweenness centrality (0.416) - this node is a cross-community bridge._
+- **Why does `Cost Gate (MANDATORY)` connect `Dev Workflow & Conventions` to `Garment QA Feature & CI`, `Docs & README`?**
+  _High betweenness centrality (0.390) - this node is a cross-community bridge._
+- **Are the 3 inferred relationships involving `Cost Gate (MANDATORY)` (e.g. with `floralib.is_output_artifact` and `Cost Gate (README)`) actually correct?**
+  _`Cost Gate (MANDATORY)` has 3 INFERRED edges - model-reasoned connections that need verification._
+- **What connects `contact_sheet.py — CLI wrapper for review gallery`, `conftest.py — puts scripts/ on sys.path for tests`, `test_floralib.py — unit tests for floralib functions` to the rest of the system?**
+  _42 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `floralib Test Suite` be split into smaller, more focused modules?**
+  _Cohesion score 0.047619047619047616 - nodes in this community are weakly interconnected._
+- **Should `Core floralib & Compose CLI` be split into smaller, more focused modules?**
+  _Cohesion score 0.07823613086770982 - nodes in this community are weakly interconnected._
+- **Should `Garment QA Feature & CI` be split into smaller, more focused modules?**
+  _Cohesion score 0.09462365591397849 - nodes in this community are weakly interconnected._
