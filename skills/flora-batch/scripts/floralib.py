@@ -43,6 +43,14 @@ def save_json_atomic(obj, path, indent=2):
     os.replace(tmp, path)
 
 
+def is_output_artifact(filename, suffix):
+    """True if filename looks like a batch OUTPUT (<stem><suffix>_<n>.<ext>).
+    Guards init.py enumeration: the 'same' convention writes outputs into the
+    input folder, so a re-init there would otherwise enqueue prior outputs as
+    new inputs -- and pay to run the technique on its own outputs."""
+    return re.search(re.escape(suffix) + r"_\d+\.[A-Za-z0-9]+$", filename) is not None
+
+
 DEFAULT_ROLE_KEYWORDS = {
     "top": ["top", "shirt", "tee", "tshirt", "knit", "sweater", "cardigan",
             "blouse", "jacket", "blazer", "coat", "hoodie"],

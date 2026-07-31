@@ -291,3 +291,17 @@ def test_save_json_atomic_replaces_existing_file(tmp_path):
     open(p, "w").write("old garbage")
     floralib.save_json_atomic([1, 2], p)
     assert json.load(open(p)) == [1, 2]
+
+
+def test_is_output_artifact_matches_suffix_number_pattern():
+    assert floralib.is_output_artifact("shirt_MCP_1.png", "_MCP") is True
+    assert floralib.is_output_artifact("shirt_MCP_12.PNG", "_MCP") is True
+
+
+def test_is_output_artifact_ignores_plain_inputs():
+    assert floralib.is_output_artifact("shirt.jpg", "_MCP") is False
+    assert floralib.is_output_artifact("shirt_MCP_1_final.jpg", "_MCP") is False  # pattern not at end
+
+
+def test_is_output_artifact_respects_the_configured_suffix():
+    assert floralib.is_output_artifact("shirt_MCP_1.png", "_AI") is False

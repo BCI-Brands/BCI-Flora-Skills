@@ -14,7 +14,7 @@ State file is written INTO the output root as batch_state.json (resume-aware).
 import argparse, os, json
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from floralib import save_json_atomic
+from floralib import save_json_atomic, is_output_artifact
 from collections import Counter
 
 EXTS = (".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".tif", ".tiff")
@@ -31,15 +31,25 @@ def main():
     a = ap.parse_args()
     IN = os.path.abspath(a.input)
 
-    # enumerate
-    rels = []
+    # enumerate (skipping prior outputs -- see floralib.is_output_artifact)
+    rels, skipped = [], 0
     if a.recurse:
         for root, _d, files in os.walk(IN):
             for f in files:
-                if f.lower().endswith(EXTS):
-                    rels.append(os.path.relpath(os.path.join(root, f), IN))
+                if not f.lower().endswith(EXTS):
+                    continue
+                if is_output_artifact(f, a.suffix):
+                    skipped += 1
+                    continue
+                rels.append(os.path.relpath(os.path.join(root, f), IN))
     else:
-        rels = [f for f in os.listdir(IN) if f.lower().endswith(EXTS) and os.path.isfile(os.path.join(IN, f))]
+        for f in os.listdir(IN):
+            if not (f.lower().endswith(EXTS) and os.path.isfile(os.path.join(IN, f))):
+                continue
+            if is_output_artifact(f, a.suffix):
+                skipped += 1
+                continue
+            rels.append(f)
     rels.sort()
 
     OUT = IN if a.convention == "same" else IN + a.suffix
@@ -68,6 +78,8 @@ def main():
              "suffix": a.suffix, "convention": a.convention, "run_cost": a.run_cost, "items": items}
     save_json_atomic(state, state_path)
     print(f"images     : {len(items)}")
+    if skipped:
+        print(f"skipped    : {skipped} prior output files (*{a.suffix}_N.*)")
     print(f"output root: {OUT}")
     print(f"state file : {state_path}")
     print(f"est. cost  : {len(items)} x ${a.run_cost} = ${len(items)*a.run_cost:.2f}")
