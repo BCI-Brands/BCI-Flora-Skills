@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Garment QA Studio — approved mockup (2026-07-24)</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  /* ===== Product-specific theme layered on top of the frame's CSS vars ===== */
+  :root{
+    --ink:#0b0c0e; --ink-2:#1a1c20; --panel:#ffffff; --panel-2:#f7f7f9;
+    --line:#e7e7ea; --muted:#6b6f76; --muted-2:#9a9da3;
+    --accent:#3d5afe; --accent-ink:#ffffff; --accent-soft:#eef0ff;
+    --ok:#16a34a; --ok-soft:#eafaf0; --warn:#e08a00; --warn-soft:#fff6e5;
+    --bad:#dc2626; --bad-soft:#fdeeee; --radius:12px; --radius-lg:18px;
+    --shadow:0 1px 2px rgba(16,17,20,.04), 0 8px 24px -12px rgba(16,17,20,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --ink:#f3f4f6; --ink-2:#e5e7eb; --panel:#131417; --panel-2:#0d0e10;
+      --line:#24262b; --muted:#9a9da6; --muted-2:#6b6f76;
+      --accent:#5b7bff; --accent-ink:#ffffff; --accent-soft:#171a2b;
+      --ok:#34d17c; --ok-soft:#0f2118; --warn:#f0a93a; --warn-soft:#241a08;
+      --bad:#f0605a; --bad-soft:#26100f;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 8px 24px -12px rgba(0,0,0,.5);
+    }
+  }
+  #frame-content{padding:0 !important;}
+  .app{font-family:-apple-system,BlinkMacSystemFont,"Inter",system-ui,sans-serif;color:var(--ink);background:var(--panel-2);min-height:100%;}
+
+  /* ---- top tab nav (mockup navigation only, not part of final product chrome) ---- */
+  .demo-tabs{display:flex;gap:2px;padding:10px 20px 0;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50;overflow-x:auto;}
+  .demo-tab{padding:10px 16px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-radius:8px 8px 0 0;white-space:nowrap;}
+  .demo-tab.active{color:var(--ink);background:var(--panel-2);}
+  .demo-tab:hover:not(.active){color:var(--ink);}
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  /* ---- app shell ---- */
+  .shell{display:grid;grid-template-columns:220px 1fr;min-height:640px;}
+  .sidenav{background:var(--panel);border-right:1px solid var(--line);padding:20px 12px;}
+  .brand-row{display:flex;align-items:center;gap:10px;padding:4px 10px 22px;}
+  .brand-mark{width:26px;height:26px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#8a5cff);flex:none;}
+  .brand-name{font-weight:700;font-size:14px;letter-spacing:-.01em;}
+  .brand-sub{font-size:10px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.08em;}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;font-size:13.5px;font-weight:500;color:var(--muted);cursor:pointer;margin-bottom:2px;}
+  .nav-item.on{background:var(--accent-soft);color:var(--accent);font-weight:600;}
+  .nav-item:hover:not(.on){background:var(--panel-2);color:var(--ink);}
+  .nav-dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:.55;}
+  .nav-sec{font-size:10px;font-weight:700;color:var(--muted-2);text-transform:uppercase;letter-spacing:.08em;margin:18px 10px 8px;}
+  .ws-card{margin-top:20px;padding:12px;border-radius:10px;background:var(--panel-2);border:1px solid var(--line);}
+  .ws-card .l{font-size:10px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.06em;}
+  .ws-card .v{font-size:15px;font-weight:700;margin-top:2px;}
+  .ws-card .v small{font-size:11px;font-weight:500;color:var(--muted);}
+
+  .content{padding:26px 32px 60px;max-width:1180px;}
+  .pagehead{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:22px;gap:16px;flex-wrap:wrap;}
+  .pagehead h1{font-size:21px;font-weight:700;letter-spacing:-.015em;margin-bottom:4px;}
+  .pagehead p{font-size:13px;color:var(--muted);}
+  .btn{border:none;border-radius:9px;padding:9px 15px;font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;}
+  .btn-primary{background:var(--ink);color:var(--panel);}
+  .btn-accent{background:var(--accent);color:var(--accent-ink);}
+  .btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow);}
+  .badge{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:.03em;display:inline-flex;align-items:center;gap:5px;}
+  .badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;}
+  .b-ok{background:var(--ok-soft);color:var(--ok);}
+  .b-warn{background:var(--warn-soft);color:var(--warn);}
+  .b-bad{background:var(--bad-soft);color:var(--bad);}
+  .b-muted{background:var(--panel-2);color:var(--muted);}
+  .b-accent{background:var(--accent-soft);color:var(--accent);}
+
+  /* ---- Upload screen ---- */
+  .dropzone{border:1.5px dashed var(--line);border-radius:var(--radius-lg);padding:44px 20px;text-align:center;background:var(--panel);}
+  .dropzone .ic{width:44px;height:44px;border-radius:12px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:20px;}
+  .dropzone h3{font-size:15px;font-weight:600;margin-bottom:4px;}
+  .dropzone p{font-size:12.5px;color:var(--muted);}
+  .thumb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;margin-top:16px;}
+  .thumb{position:relative;aspect-ratio:3/4;border-radius:9px;overflow:hidden;border:1px solid var(--line);background:var(--panel-2);}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .thumb .rm{position:absolute;top:5px;right:5px;width:19px;height:19px;border-radius:50%;background:rgba(10,10,12,.6);color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .thumb .name{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.55));color:#fff;font-size:9.5px;padding:10px 6px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+  .tech-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+  .tech-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:1.5px solid var(--line);cursor:pointer;}
+  .tech-row.sel{border-color:var(--accent);background:var(--accent-soft);}
+  .tech-thumb{width:38px;height:38px;border-radius:8px;background:var(--panel-2);flex:none;background-size:cover;background-position:center;}
+  .tech-name{font-size:13.5px;font-weight:600;}
+  .tech-desc{font-size:11.5px;color:var(--muted);}
+  .tech-cost{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--ink);}
+  .radio{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--line);flex:none;display:flex;align-items:center;justify-content:center;}
+  .tech-row.sel .radio{border-color:var(--accent);}
+  .tech-row.sel .radio::after{content:'';width:8px;height:8px;border-radius:50%;background:var(--accent);}
+
+  .costbar{position:sticky;bottom:0;margin-top:22px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;}
+  .costbar .sum{font-size:13px;color:var(--muted);}
+  .costbar .sum b{color:var(--ink);font-weight:700;}
+  .costbar .total{font-size:19px;font-weight:800;letter-spacing:-.01em;}
+
+  /* ---- Status screen ---- */
+  .statbar{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;}
+  .stat .l{font-size:10.5px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+  .stat .v{font-size:20px;font-weight:800;letter-spacing:-.015em;}
+  .live{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:.04em;}
+  .live .p{width:7px;height:7px;border-radius:50%;background:var(--ok);animation:pulse 1.6s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  .jobtable{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden;}
+  .jobtable th{text-align:left;font-size:10.5px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.05em;font-weight:700;padding:10px 14px;background:var(--panel-2);border-bottom:1px solid var(--line);}
+  .jobtable td{padding:10px 14px;font-size:13px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  .jobtable tr:last-child td{border-bottom:none;}
+  .row-thumb{width:36px;height:36px;border-radius:7px;object-fit:cover;display:block;}
+  .file-name{font-weight:600;font-size:12.5px;}
+  .file-meta{font-size:11px;color:var(--muted);}
+  .progress{width:110px;height:5px;border-radius:99px;background:var(--panel-2);overflow:hidden;}
+  .progress i{display:block;height:100%;background:var(--accent);border-radius:99px;}
+  .mini-btn{font-size:11.5px;font-weight:600;color:var(--accent);cursor:pointer;}
+
+  /* ---- Results gallery ---- */
+  .gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;}
+  .g-card{background:var(--panel);border:1.5px solid var(--line);border-radius:var(--radius-lg);overflow:hidden;cursor:pointer;position:relative;}
+  .g-card.checked{border-color:var(--accent);}
+  .g-card .imgwrap{aspect-ratio:3/4;background:var(--panel-2);position:relative;}
+  .g-card .imgwrap img{width:100%;height:100%;object-fit:cover;display:block;}
+  .g-check{position:absolute;top:9px;left:9px;width:21px;height:21px;border-radius:6px;border:1.5px solid rgba(255,255,255,.9);background:rgba(20,20,24,.35);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;}
+  .g-card.checked .g-check{background:var(--accent);border-color:var(--accent);}
+  .g-src{position:absolute;bottom:9px;right:9px;width:34px;height:34px;border-radius:8px;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);overflow:hidden;}
+  .g-src img{width:100%;height:100%;object-fit:cover;}
+  .g-info{padding:10px 12px;}
+  .g-info .name{font-size:12px;font-weight:600;}
+  .g-info .meta{font-size:10.5px;color:var(--muted);margin-top:1px;}
+
+  .selectbar{position:sticky;bottom:16px;margin-top:20px;background:var(--ink);color:var(--panel);border-radius:99px;padding:10px 10px 10px 20px;display:flex;align-items:center;gap:16px;box-shadow:0 12px 30px -8px rgba(0,0,0,.4);width:fit-content;}
+  .selectbar .n{font-size:13px;font-weight:600;}
+  .selectbar .btn-accent{padding:9px 18px;border-radius:99px;}
+
+  /* ---- QA results ---- */
+  .qa-section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted-2);margin:26px 0 12px;display:flex;align-items:center;gap:8px;}
+  .qa-card{background:var(--panel);border:1.5px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden;}
+  .qa-card.flagged{border-color:var(--bad);}
+  .qa-top{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);}
+  .qa-top .fname{font-size:13px;font-weight:700;}
+  .qa-verdicts{display:flex;gap:8px;}
+  .qa-body{display:grid;grid-template-columns:1fr 1fr 1.1fr;gap:0;}
+  .qa-imgcol{padding:16px;border-right:1px solid var(--line);}
+  .qa-imgcol .lbl{font-size:10px;font-weight:700;color:var(--muted-2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+  .qa-imgcol img{width:100%;border-radius:10px;display:block;aspect-ratio:3/4;object-fit:cover;background:var(--panel-2);}
+  .qa-notes{padding:16px 18px;}
+  .qa-note-row{margin-bottom:14px;}
+  .qa-note-row:last-child{margin-bottom:0;}
+  .qa-note-row .k{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+  .qa-note-row .k b{font-size:12px;font-weight:700;}
+  .qa-note-row p{font-size:12.5px;color:var(--muted);line-height:1.5;}
+
+  /* ---- Admin ---- */
+  .admin-table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg);overflow:hidden;}
+  .admin-table th{text-align:left;font-size:10.5px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.05em;font-weight:700;padding:11px 14px;background:var(--panel-2);border-bottom:1px solid var(--line);}
+  .admin-table td{padding:12px 14px;font-size:13px;border-bottom:1px solid var(--line);}
+  .admin-table tr:last-child td{border-bottom:none;}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:11.5px;color:var(--muted);}
+  .toggle{width:34px;height:19px;border-radius:99px;background:var(--ok);position:relative;cursor:pointer;flex:none;}
+  .toggle::after{content:'';position:absolute;top:2px;right:2px;width:15px;height:15px;border-radius:50%;background:#fff;}
+  .toggle.off{background:var(--line);}
+  .toggle.off::after{left:2px;right:auto;}
+  .audit-row{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
+  .audit-row:last-child{border-bottom:none;}
+  .audit-row .who{font-weight:700;width:110px;flex:none;}
+  .audit-row .when{color:var(--muted-2);width:120px;flex:none;font-size:11.5px;}
+  .audit-row .what{color:var(--muted);}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="demo-tabs" id="demo-tabs">
+    <div class="demo-tab active" data-p="p-upload">1 · New Batch</div>
+    <div class="demo-tab" data-p="p-status">2 · Live Status</div>
+    <div class="demo-tab" data-p="p-results">3 · Results & Select</div>
+    <div class="demo-tab" data-p="p-qa">4 · QA Verdicts</div>
+    <div class="demo-tab" data-p="p-admin">5 · Admin</div>
+  </div>
+
+  <!-- ============ PANEL: UPLOAD ============ -->
+  <div class="panel active" id="p-upload">
+    <div class="shell">
+      <div class="sidenav">
+        <div class="brand-row"><div class="brand-mark"></div><div><div class="brand-name">Studio QA</div><div class="brand-sub">BCI Internal</div></div></div>
+        <div class="nav-item on"><span class="nav-dot"></span> New Batch</div>
+        <div class="nav-item"><span class="nav-dot"></span> Batches</div>
+        <div class="nav-item"><span class="nav-dot"></span> QA History</div>
+        <div class="nav-sec">Admin</div>
+        <div class="nav-item"><span class="nav-dot"></span> Techniques</div>
+        <div class="nav-item"><span class="nav-dot"></span> Audit Log</div>
+        <div class="ws-card"><div class="l">Workspace</div><div class="v">BCI Brands</div><div class="l" style="margin-top:8px">Credits (est.)</div><div class="v">$212.40 <small>remaining</small></div></div>
+      </div>
+      <div class="content">
+        <div class="pagehead">
+          <div><h1>New Batch</h1><p>Upload garment photos, pick a technique, review cost.</p></div>
+          <span class="badge b-muted">Draft</span>
+        </div>
+
+        <div class="dropzone">
+          <div class="ic">&#8593;</div>
+          <h3>Drop garment photos here</h3>
+          <p>or click to browse &middot; PNG/JPG &middot; up to 200 per batch</p>
+        </div>
+
+        <div class="thumb-grid">
+          <div class="thumb"><img src="assets/in-shirt-front.png"><div class="rm">&times;</div><div class="name">shirt_front.png</div></div>
+          <div class="thumb"><img src="assets/in-hoodie-front.png"><div class="rm">&times;</div><div class="name">hoodie_front.png</div></div>
+          <div class="thumb"><img src="assets/in-polo-front.png"><div class="rm">&times;</div><div class="name">polo_front.png</div></div>
+          <div class="thumb" style="display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;border-style:dashed;">+3 more</div>
+        </div>
+
+        <div style="margin-top:26px;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:2px;">Technique</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-bottom:10px;">Curated, per-image only &mdash; keeps every run QA-compatible.</div>
+          <div class="tech-list">
+            <div class="tech-row sel"><div class="radio"></div><div class="tech-thumb" style="background-image:url('assets/out-hoodie-front.png')"></div><div><div class="tech-name">Studio Bodysuit &mdash; Garment on Model</div><div class="tech-desc">Full-body studio render, neutral bodysuit base</div></div><div class="tech-cost">$0.72 / run</div></div>
+            <div class="tech-row"><div class="radio"></div><div class="tech-thumb" style="background:linear-gradient(135deg,#d9dbe0,#eceef2)"></div><div><div class="tech-name">Ghost Mannequin</div><div class="tech-desc">Invisible-model product shot</div></div><div class="tech-cost">$1.94 / run</div></div>
+            <div class="tech-row"><div class="radio"></div><div class="tech-thumb" style="background:linear-gradient(135deg,#d9dbe0,#eceef2)"></div><div><div class="tech-name">Editorial Fashion Shoot</div><div class="tech-desc">Lifestyle campaign styling</div></div><div class="tech-cost">$0.86 / run</div></div>
+          </div>
+        </div>
+
+        <div class="costbar">
+          <div class="sum">6 images &times; <b>$0.72</b> per run</div>
+          <div class="total">$4.32</div>
+          <button class="btn btn-accent">Review &amp; Run &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PANEL: STATUS ============ -->
+  <div class="panel" id="p-status">
+    <div class="shell">
+      <div class="sidenav">
+        <div class="brand-row"><div class="brand-mark"></div><div><div class="brand-name">Studio QA</div><div class="brand-sub">BCI Internal</div></div></div>
+        <div class="nav-item"><span class="nav-dot"></span> New Batch</div>
+        <div class="nav-item on"><span class="nav-dot"></span> Batches</div>
+        <div class="nav-item"><span class="nav-dot"></span> QA History</div>
+        <div class="nav-sec">Admin</div>
+        <div class="nav-item"><span class="nav-dot"></span> Techniques</div>
+        <div class="nav-item"><span class="nav-dot"></span> Audit Log</div>
+      </div>
+      <div class="content">
+        <div class="pagehead">
+          <div><h1>Batch #2481 &middot; Fall Drop &ndash; Knits</h1><p>Studio Bodysuit &middot; started 2 min ago by <b style="color:var(--ink)">j.alvarez</b></p></div>
+          <div class="live"><span class="p"></span> Live</div>
+        </div>
+
+        <div class="statbar">
+          <div class="stat"><div class="l">Progress</div><div class="v">4 / 6</div></div>
+          <div class="stat"><div class="l">Spend so far</div><div class="v">$2.88</div></div>
+          <div class="stat"><div class="l">Est. remaining</div><div class="v">~40s</div></div>
+          <div class="stat"><div class="l">Failed</div><div class="v" style="color:var(--bad)">1</div></div>
+        </div>
+
+        <table class="jobtable">
+          <thead><tr><th></th><th>File</th><th>Status</th><th>Progress</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><img class="row-thumb" src="assets/in-shirt-front.png"></td><td><div class="file-name">shirt_front.png</div><div class="file-meta">run_s5702k&hellip;</div></td><td><span class="badge b-ok">Done</span></td><td><div class="progress"><i style="width:100%"></i></div></td><td><span class="mini-btn">View</span></td></tr>
+            <tr><td><img class="row-thumb" src="assets/in-hoodie-front.png"></td><td><div class="file-name">hoodie_front.png</div><div class="file-meta">run_s5708r&hellip;</div></td><td><span class="badge b-ok">Done</span></td><td><div class="progress"><i style="width:100%"></i></div></td><td><span class="mini-btn">View</span></td></tr>
+            <tr><td><img class="row-thumb" src="assets/in-polo-front.png"></td><td><div class="file-name">polo_front.png</div><div class="file-meta">run_s570we&hellip;</div></td><td><span class="badge b-ok">Done</span></td><td><div class="progress"><i style="width:100%"></i></div></td><td><span class="mini-btn">View</span></td></tr>
+            <tr><td><div class="row-thumb" style="background:var(--panel-2)"></div></td><td><div class="file-name">shirt_back.png</div><div class="file-meta">run_s57e9y&hellip;</div></td><td><span class="badge b-accent">Running</span></td><td><div class="progress"><i style="width:64%"></i></div></td><td></td></tr>
+            <tr><td><div class="row-thumb" style="background:var(--panel-2)"></div></td><td><div class="file-name">hoodie_back.png</div><div class="file-meta">queued</div></td><td><span class="badge b-muted">Queued</span></td><td><div class="progress"><i style="width:0%"></i></div></td><td></td></tr>
+            <tr><td><div class="row-thumb" style="background:var(--bad-soft)"></div></td><td><div class="file-name">polo_back.png</div><div class="file-meta">GENERATION_PROVIDER_TIMEOUT</div></td><td><span class="badge b-bad">Failed</span></td><td><div class="progress"><i style="width:100%;background:var(--bad)"></i></div></td><td><span class="mini-btn">Retry</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PANEL: RESULTS ============ -->
+  <div class="panel" id="p-results">
+    <div class="shell">
+      <div class="sidenav">
+        <div class="brand-row"><div class="brand-mark"></div><div><div class="brand-name">Studio QA</div><div class="brand-sub">BCI Internal</div></div></div>
+        <div class="nav-item"><span class="nav-dot"></span> New Batch</div>
+        <div class="nav-item on"><span class="nav-dot"></span> Batches</div>
+        <div class="nav-item"><span class="nav-dot"></span> QA History</div>
+        <div class="nav-sec">Admin</div>
+        <div class="nav-item"><span class="nav-dot"></span> Techniques</div>
+        <div class="nav-item"><span class="nav-dot"></span> Audit Log</div>
+      </div>
+      <div class="content">
+        <div class="pagehead">
+          <div><h1>Batch #2481 &middot; Results</h1><p>Select outputs to run garment QA on. Small corner thumbnail = source photo.</p></div>
+          <button class="btn btn-ghost">Download all</button>
+        </div>
+
+        <div class="gallery">
+          <div class="g-card checked"><div class="imgwrap"><img src="assets/out-shirt-front.png"><div class="g-check">&#10003;</div><div class="g-src"><img src="assets/in-shirt-front.png"></div></div><div class="g-info"><div class="name">shirt_front_1.png</div><div class="meta">Studio Bodysuit</div></div></div>
+          <div class="g-card checked"><div class="imgwrap"><img src="assets/out-hoodie-front.png"><div class="g-check">&#10003;</div><div class="g-src"><img src="assets/in-hoodie-front.png"></div></div><div class="g-info"><div class="name">hoodie_front_1.png</div><div class="meta">Studio Bodysuit</div></div></div>
+          <div class="g-card checked"><div class="imgwrap"><img src="assets/out-polo-front.png"><div class="g-check">&#10003;</div><div class="g-src"><img src="assets/in-polo-front.png"></div></div><div class="g-info"><div class="name">polo_front_1.png</div><div class="meta">Studio Bodysuit</div></div></div>
+          <div class="g-card"><div class="imgwrap"><img src="assets/out-shirt-front.png" style="filter:grayscale(1) brightness(1.3)"><div class="g-check"></div><div class="g-src"><img src="assets/in-shirt-front.png"></div></div><div class="g-info"><div class="name">shirt_back_1.png</div><div class="meta">Studio Bodysuit</div></div></div>
+        </div>
+
+        <div class="selectbar"><div class="n">3 selected</div><button class="btn btn-accent">Check selected &rarr;</button></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PANEL: QA RESULTS ============ -->
+  <div class="panel" id="p-qa">
+    <div class="shell">
+      <div class="sidenav">
+        <div class="brand-row"><div class="brand-mark"></div><div><div class="brand-name">Studio QA</div><div class="brand-sub">BCI Internal</div></div></div>
+        <div class="nav-item"><span class="nav-dot"></span> New Batch</div>
+        <div class="nav-item on"><span class="nav-dot"></span> Batches</div>
+        <div class="nav-item"><span class="nav-dot"></span> QA History</div>
+        <div class="nav-sec">Admin</div>
+        <div class="nav-item"><span class="nav-dot"></span> Techniques</div>
+        <div class="nav-item"><span class="nav-dot"></span> Audit Log</div>
+      </div>
+      <div class="content">
+        <div class="pagehead">
+          <div><h1>QA Results &middot; Batch #2481</h1><p>3 checked &middot; 1 flagged &middot; $0.00 additional spend</p></div>
+          <button class="btn btn-ghost">Export report</button>
+        </div>
+
+        <div class="qa-section-label"><span class="badge b-bad">1</span> Needs review</div>
+        <div class="qa-card flagged">
+          <div class="qa-top"><div class="fname">polo_front_1.png</div><div class="qa-verdicts"><span class="badge b-bad">Color: mismatch</span><span class="badge b-bad">Construction: mismatch</span></div></div>
+          <div class="qa-body">
+            <div class="qa-imgcol"><div class="lbl">Input</div><img src="assets/in-polo-front.png"></div>
+            <div class="qa-imgcol"><div class="lbl">Rendered output</div><img src="assets/out-polo-front.png"></div>
+            <div class="qa-notes">
+              <div class="qa-note-row"><div class="k"><span class="badge b-bad">Color</span><b>mismatch</b></div><p>Input is black/white horizontal stripes; output is solid black &mdash; the white stripe is entirely missing, not just shifted.</p></div>
+              <div class="qa-note-row"><div class="k"><span class="badge b-bad">Construction</span><b>mismatch</b></div><p>The red embroidered logo on the left chest is missing. Collar and placket are roughly correct.</p></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="qa-section-label"><span class="badge b-ok">2</span> Passed</div>
+        <div class="qa-card">
+          <div class="qa-top"><div class="fname">hoodie_front_1.png</div><div class="qa-verdicts"><span class="badge b-ok">Color: match</span><span class="badge b-warn">Construction: minor</span></div></div>
+          <div class="qa-body">
+            <div class="qa-imgcol"><div class="lbl">Input</div><img src="assets/in-hoodie-front.png"></div>
+            <div class="qa-imgcol"><div class="lbl">Rendered output</div><img src="assets/out-hoodie-front.png"></div>
+            <div class="qa-notes">
+              <div class="qa-note-row"><div class="k"><span class="badge b-ok">Color</span><b>match</b></div><p>Navy blue faithfully reproduced on the model.</p></div>
+              <div class="qa-note-row"><div class="k"><span class="badge b-warn">Construction</span><b>minor deviation</b></div><p>Kangaroo pocket rendered as two separate slit pockets instead of one continuous pocket. Hood, zipper, drawstrings all correct.</p></div>
+            </div>
+          </div>
+        </div>
+        <div class="qa-card">
+          <div class="qa-top"><div class="fname">shirt_front_1.png</div><div class="qa-verdicts"><span class="badge b-ok">Color: match</span><span class="badge b-ok">Construction: match</span></div></div>
+          <div class="qa-body">
+            <div class="qa-imgcol"><div class="lbl">Input</div><img src="assets/in-shirt-front.png"></div>
+            <div class="qa-imgcol"><div class="lbl">Rendered output</div><img src="assets/out-shirt-front.png"></div>
+            <div class="qa-notes"><div class="qa-note-row"><div class="k"><span class="badge b-ok">Pass</span></div><p>Color and construction both faithful to the input reference photo.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PANEL: ADMIN ============ -->
+  <div class="panel" id="p-admin">
+    <div class="shell">
+      <div class="sidenav">
+        <div class="brand-row"><div class="brand-mark"></div><div><div class="brand-name">Studio QA</div><div class="brand-sub">BCI Internal</div></div></div>
+        <div class="nav-item"><span class="nav-dot"></span> New Batch</div>
+        <div class="nav-item"><span class="nav-dot"></span> Batches</div>
+        <div class="nav-item"><span class="nav-dot"></span> QA History</div>
+        <div class="nav-sec">Admin</div>
+        <div class="nav-item on"><span class="nav-dot"></span> Techniques</div>
+        <div class="nav-item"><span class="nav-dot"></span> Audit Log</div>
+      </div>
+      <div class="content">
+        <div class="pagehead">
+          <div><h1>Curated Techniques</h1><p>Only per-image techniques appear in New Batch &mdash; keeps every run QA-compatible.</p></div>
+          <button class="btn btn-primary">+ Add technique</button>
+        </div>
+
+        <table class="admin-table">
+          <thead><tr><th>Technique</th><th>ID</th><th>Run cost</th><th>Inputs</th><th>Active</th><th></th></tr></thead>
+          <tbody>
+            <tr><td><b>Studio Bodysuit &mdash; Garment on Model</b></td><td class="mono">tech_ts7cvkfm&hellip;</td><td>$0.72</td><td><span class="badge b-accent">1 image</span></td><td><div class="toggle"></div></td><td><span class="mini-btn">Edit</span></td></tr>
+            <tr><td><b>Ghost Mannequin</b></td><td class="mono">tech_ts78fd3d&hellip;</td><td>$1.94</td><td><span class="badge b-accent">1 image</span></td><td><div class="toggle"></div></td><td><span class="mini-btn">Edit</span></td></tr>
+            <tr><td><b>Editorial Fashion Shoot</b></td><td class="mono">tech_ts70tvv5&hellip;</td><td>$0.86</td><td><span class="badge b-accent">1 image</span></td><td><div class="toggle"></div></td><td><span class="mini-btn">Edit</span></td></tr>
+            <tr><td style="opacity:.5"><b>Outfit to Campaign</b></td><td class="mono" style="opacity:.5">tech_ts7dmhm2&hellip;</td><td style="opacity:.5">$0.50</td><td><span class="badge b-muted">4 images &middot; compose</span></td><td><div class="toggle off"></div></td><td><span class="mini-btn" style="opacity:.5">&mdash;</span></td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:11.5px;color:var(--muted-2);margin-top:8px;">Compose (multi-input) techniques are visible but disabled &mdash; QA doesn't support them yet.</p>
+
+        <div class="qa-section-label" style="margin-top:32px;">Recent activity</div>
+        <div class="card" style="padding:6px 18px;">
+          <div class="audit-row"><div class="who">j.alvarez</div><div class="when">2 min ago</div><div class="what">started Batch #2481 (6 images, Studio Bodysuit, $4.32)</div></div>
+          <div class="audit-row"><div class="who">j.alvarez</div><div class="when">1 min ago</div><div class="what">ran QA on 3 outputs in Batch #2481 &mdash; 1 flagged</div></div>
+          <div class="audit-row"><div class="who">m.chen</div><div class="when">14 min ago</div><div class="what">disabled technique &ldquo;Outfit to Campaign&rdquo;</div></div>
+          <div class="audit-row"><div class="who">m.chen</div><div class="when">1 hr ago</div><div class="what">added technique &ldquo;Editorial Fashion Shoot&rdquo; ($0.86/run)</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.getElementById('demo-tabs').addEventListener('click', function(e){
+    var t = e.target.closest('.demo-tab'); if(!t) return;
+    document.querySelectorAll('.demo-tab').forEach(function(x){x.classList.remove('active')});
+    document.querySelectorAll('.panel').forEach(function(x){x.classList.remove('active')});
+    t.classList.add('active');
+    document.getElementById(t.dataset.p).classList.add('active');
+  });
+  document.querySelectorAll('.g-card').forEach(function(c){
+    c.addEventListener('click', function(){ c.classList.toggle('checked'); });
+  });
+  document.querySelectorAll('.tech-row').forEach(function(r){
+    r.addEventListener('click', function(){
+      document.querySelectorAll('.tech-row').forEach(function(x){x.classList.remove('sel')});
+      r.classList.add('sel');
+    });
+  });
+</script>
+</body>
+</html>

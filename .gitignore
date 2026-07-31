@@ -23,3 +23,6 @@ batch_state.json
 graphify-out/.graphify_python
 graphify-out/.graphify_root
 graphify-out/cache/
+
+# superpowers: brainstorming visual-companion sessions (local scratch)
+.superpowers/
