@@ -15,7 +15,7 @@ silently paired with a possibly-wrong input. Either case exits 1.
 """
 import argparse, os, json, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from floralib import resolve_qa_pairs
+from floralib import resolve_qa_pairs, save_json_atomic
 
 
 def main():
@@ -29,7 +29,7 @@ def main():
     result = resolve_qa_pairs(state, selected)
 
     manifest_path = os.path.join(os.path.dirname(os.path.abspath(a.state)), "qa_manifest.json")
-    json.dump(result["pairs"], open(manifest_path, "w"), indent=2)
+    save_json_atomic(result["pairs"], manifest_path)
 
     print("resolved  :", len(result["pairs"]))
     print("manifest  :", manifest_path)

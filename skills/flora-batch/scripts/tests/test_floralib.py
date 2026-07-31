@@ -1,4 +1,6 @@
 import floralib
+import json
+import os
 
 
 def test_output_variants_imagekit_tries_orig_true_first():
@@ -275,3 +277,17 @@ def test_render_qa_report_md_replaces_carriage_return_in_notes():
     md = floralib.render_qa_report_md(results)
     assert "\r" not in md
     assert "line1 line2" in md
+
+
+def test_save_json_atomic_writes_valid_json_and_leaves_no_tmp(tmp_path):
+    p = str(tmp_path / "state.json")
+    floralib.save_json_atomic({"a": 1}, p)
+    assert json.load(open(p)) == {"a": 1}
+    assert sorted(os.listdir(str(tmp_path))) == ["state.json"]  # no .tmp left behind
+
+
+def test_save_json_atomic_replaces_existing_file(tmp_path):
+    p = str(tmp_path / "state.json")
+    open(p, "w").write("old garbage")
+    floralib.save_json_atomic([1, 2], p)
+    assert json.load(open(p)) == [1, 2]

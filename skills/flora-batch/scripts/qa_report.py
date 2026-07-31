@@ -17,7 +17,7 @@ that's what gets relayed to the user in chat, not a full dump of every pair.
 """
 import argparse, os, json, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from floralib import qa_overall_flag, render_qa_report_md
+from floralib import qa_overall_flag, render_qa_report_md, save_json_atomic
 
 
 def main():
@@ -31,7 +31,7 @@ def main():
         r["overall_flag"] = qa_overall_flag(r["color"]["verdict"], r["construction"]["verdict"])
 
     os.makedirs(a.out_dir, exist_ok=True)
-    json.dump(results, open(os.path.join(a.out_dir, "qa_report.json"), "w"), indent=2)
+    save_json_atomic(results, os.path.join(a.out_dir, "qa_report.json"))
     open(os.path.join(a.out_dir, "qa_report.md"), "w").write(render_qa_report_md(results))
 
     flagged = [r for r in results if r["overall_flag"]]

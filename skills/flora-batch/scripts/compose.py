@@ -12,7 +12,7 @@ filename keywords; any ambiguity is printed for you to confirm before running.
 """
 import argparse, os, json, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from floralib import map_files_to_roles, build_compose_state, estimate_cost, compose_state_in_progress
+from floralib import map_files_to_roles, build_compose_state, estimate_cost, compose_state_in_progress, save_json_atomic
 
 EXTS = (".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".tif", ".tiff")
 
@@ -54,7 +54,7 @@ def main():
             sys.exit(2)
 
     state = build_compose_state(IN, a.technique, role_map, a.run_cost)
-    json.dump(state, open(state_path, "w"), indent=2)
+    save_json_atomic(state, state_path)
 
     print("role mapping:")
     for r in role_ids:

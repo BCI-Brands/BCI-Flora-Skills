@@ -12,7 +12,7 @@ already present with size > 0).
 """
 import argparse, os, json, subprocess, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from floralib import output_variants, plan_downloads
+from floralib import output_variants, plan_downloads, save_json_atomic
 
 
 def dl(url, dest, compressed):
@@ -54,7 +54,7 @@ def download_outputs(outputs, out_dir, compressed):
 def download_state(state_path, compressed):
     s = json.load(open(state_path))
     OUT, suffix, items = s["output"], s.get("suffix", "_MCP"), s["items"]
-    def save(): json.dump(s, open(state_path, "w"), indent=2)
+    def save(): save_json_atomic(s, state_path)
     ok, fail, tb = 0, 0, 0
     for it in items:
         if it["stage"] == "done":

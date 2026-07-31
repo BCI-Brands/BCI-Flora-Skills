@@ -2,6 +2,7 @@
 """Pure, network-free helpers for the flora-batch skill. Unit-tested; imported by
 the thin CLI scripts (download.py, compose.py, contact_sheet.py)."""
 import base64
+import json
 import os
 import re
 
@@ -29,6 +30,17 @@ def estimate_cost(run_cost, num_runs):
     """Total USD = run_cost x number of RUNS. Outputs-per-run are free; do not
     multiply by output count. Compose look = 1 run; per-image batch = N runs."""
     return round(run_cost * num_runs, 2)
+
+
+def save_json_atomic(obj, path, indent=2):
+    """Write JSON via temp-file + os.replace so an interrupt can never leave a
+    truncated file. The state files are the pipeline's only checkpoint -- a
+    half-written batch_state.json loses the whole batch's recovery story.
+    Temp file lives in the same directory so os.replace stays atomic."""
+    tmp = path + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(obj, f, indent=indent)
+    os.replace(tmp, path)
 
 
 DEFAULT_ROLE_KEYWORDS = {

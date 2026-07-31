@@ -13,6 +13,9 @@ Reservations expire (~15 min). Any item that returns 400/403 stays "pending" for
 agent to assets.retry() and re-run this script on the fresh reservations.
 """
 import argparse, os, json, subprocess
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from floralib import save_json_atomic
 
 def main():
     ap = argparse.ArgumentParser()
@@ -26,7 +29,7 @@ def main():
         res = res.get("items") or res.get("r")
     assert len(res) == len(items), f"reservation/item mismatch {len(res)} vs {len(items)}"
 
-    def save(): json.dump(s, open(a.state, "w"), indent=2)
+    def save(): save_json_atomic(s, a.state)
     ok, fail = 0, []
     for i, it in enumerate(items):
         if it["stage"] != "pending":

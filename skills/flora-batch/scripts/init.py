@@ -12,6 +12,9 @@ Conventions:
 State file is written INTO the output root as batch_state.json (resume-aware).
 """
 import argparse, os, json
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from floralib import save_json_atomic
 from collections import Counter
 
 EXTS = (".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif", ".tif", ".tiff")
@@ -63,7 +66,7 @@ def main():
 
     state = {"input": IN, "output": OUT, "technique": a.technique, "input_id": a.input_id,
              "suffix": a.suffix, "convention": a.convention, "run_cost": a.run_cost, "items": items}
-    json.dump(state, open(state_path, "w"), indent=2)
+    save_json_atomic(state, state_path)
     print(f"images     : {len(items)}")
     print(f"output root: {OUT}")
     print(f"state file : {state_path}")
