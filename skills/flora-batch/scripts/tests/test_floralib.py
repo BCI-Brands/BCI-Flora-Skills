@@ -1,4 +1,6 @@
 import floralib
+import json
+import os
 
 
 def test_output_variants_imagekit_tries_orig_true_first():
@@ -275,3 +277,111 @@ def test_render_qa_report_md_replaces_carriage_return_in_notes():
     md = floralib.render_qa_report_md(results)
     assert "\r" not in md
     assert "line1 line2" in md
+
+
+def test_save_json_atomic_writes_valid_json_and_leaves_no_tmp(tmp_path):
+    p = str(tmp_path / "state.json")
+    floralib.save_json_atomic({"a": 1}, p)
+    assert json.load(open(p)) == {"a": 1}
+    assert sorted(os.listdir(str(tmp_path))) == ["state.json"]  # no .tmp left behind
+
+
+def test_save_json_atomic_replaces_existing_file(tmp_path):
+    p = str(tmp_path / "state.json")
+    open(p, "w").write("old garbage")
+    floralib.save_json_atomic([1, 2], p)
+    assert json.load(open(p)) == [1, 2]
+
+
+def test_is_output_artifact_matches_suffix_number_pattern():
+    assert floralib.is_output_artifact("shirt_MCP_1.png", "_MCP") is True
+    assert floralib.is_output_artifact("shirt_MCP_12.PNG", "_MCP") is True
+
+
+def test_is_output_artifact_ignores_plain_inputs():
+    assert floralib.is_output_artifact("shirt.jpg", "_MCP") is False
+    assert floralib.is_output_artifact("shirt_MCP_1_final.jpg", "_MCP") is False  # pattern not at end
+
+
+def test_is_output_artifact_respects_the_configured_suffix():
+    assert floralib.is_output_artifact("shirt_MCP_1.png", "_AI") is False
+
+
+def test_match_reservations_matches_pending_items_by_rel():
+    items = [
+        {"rel": "a.jpg", "stage": "pending"},
+        {"rel": "b.jpg", "stage": "uploaded"},
+    ]
+    res = {"a.jpg": {"asset_id": "as_1", "url": "https://u", "form_fields": {}}}
+    m = floralib.match_reservations(res, items)
+    assert m["matched"] == {"a.jpg": res["a.jpg"]}
+    assert m["missing_rels"] == []
+    assert m["unknown_rels"] == []
+
+
+def test_match_reservations_flags_missing_pending_and_unknown_keys():
+    items = [
+        {"rel": "a.jpg", "stage": "pending"},
+        {"rel": "b.jpg", "stage": "pending"},
+    ]
+    res = {"a.jpg": {"asset_id": "as_1", "url": "https://u", "form_fields": {}},
+           "ghost.jpg": {"asset_id": "as_9", "url": "https://u", "form_fields": {}}}
+    m = floralib.match_reservations(res, items)
+    assert m["missing_rels"] == ["b.jpg"]
+    assert m["unknown_rels"] == ["ghost.jpg"]
+
+
+def test_match_reservations_uploaded_items_need_no_reservation():
+    items = [{"rel": "done.jpg", "stage": "uploaded"}]
+    m = floralib.match_reservations({}, items)
+    assert m == {"matched": {}, "missing_rels": [], "unknown_rels": []}
+
+
+def test_build_curl_upload_args_uses_form_string_for_fields_and_F_only_for_file():
+    args = floralib.build_curl_upload_args(
+        "https://storage.googleapis.com/b/", {"key": "k/x.jpg", "policy": "@evil"}, "/in/x.jpg")
+    assert args[-2:] == ["-F", "file=@/in/x.jpg"]          # file part LAST, via -F
+    assert "--form-string" in args
+    i = args.index("--form-string")
+    assert args[i + 1] == "key=k/x.jpg"
+    assert "-F" not in args[:-2]                            # no -F except the file part
+    assert "policy=@evil" in args                           # sent literally via --form-string
+
+
+def test_build_curl_upload_args_preserves_field_order_and_url():
+    ff = {"Content-Type": "image/jpeg", "key": "k"}
+    args = floralib.build_curl_upload_args("https://u", ff, "/f.jpg")
+    assert args[args.index("-X") + 1] == "POST"
+    assert "https://u" in args
+    joined = " ".join(args)
+    assert joined.index("Content-Type=image/jpeg") < joined.index("key=k")
+
+
+def test_validate_qa_results_accepts_canonical_vocabulary():
+    results = [{"output": "/o/a.png", "input": "/i/a.jpg",
+                "color": {"verdict": "minor_shift", "notes": ""},
+                "construction": {"verdict": "minor_deviation", "notes": ""}}]
+    assert floralib.validate_qa_results(results) == []
+
+
+def test_validate_qa_results_flags_unknown_and_cross_domain_verdicts():
+    results = [
+        {"output": "/o/a.png", "input": "/i/a.jpg",
+         "color": {"verdict": "Match", "notes": ""},                 # wrong case
+         "construction": {"verdict": "match", "notes": ""}},
+        {"output": "/o/b.png", "input": "/i/b.jpg",
+         "color": {"verdict": "match", "notes": ""},
+         "construction": {"verdict": "minor_shift", "notes": ""}},   # color vocab in construction
+    ]
+    problems = floralib.validate_qa_results(results)
+    assert len(problems) == 2
+    assert any("a.png" in p and "Match" in p for p in problems)
+    assert any("b.png" in p and "minor_shift" in p for p in problems)
+
+
+def test_validate_qa_results_flags_missing_verdict_key():
+    results = [{"output": "/o/a.png", "input": "/i/a.jpg",
+                "color": {"notes": "forgot verdict"},
+                "construction": {"verdict": "match", "notes": ""}}]
+    problems = floralib.validate_qa_results(results)
+    assert len(problems) == 1 and "None" in problems[0]

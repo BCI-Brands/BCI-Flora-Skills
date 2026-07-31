@@ -4,9 +4,10 @@ refs (works by double-click, no server, no headless Chrome). Press D for a
 developer mode that copies a tile's name on click.
 
 Usage:
+  contact_sheet.py --state batch_state.json          (per-image batch)
   contact_sheet.py --dir DIR --outputs OUTPUTS.json \
-      [--title T] [--subtitle S] [--inputs role=FILE,role=FILE]
-Writes DIR/_contact_sheet.html.
+      [--title T] [--subtitle S] [--inputs role=FILE,role=FILE]   (compose)
+Writes _contact_sheet.html into the output folder.
 """
 import argparse, os, json, re, html as _html
 
@@ -64,14 +65,44 @@ def render_contact_sheet(title, subtitle, inputs, groups):
     return "\n".join(parts)
 
 
+def groups_from_state(state):
+    """Per-image mode: [(heading, [img path relative to state['output'], ...])]
+    for every item with downloaded files, grouped by out_subdir. Relative paths
+    keep the gallery portable (it lives at state['output']/_contact_sheet.html)."""
+    out = state["output"]
+    groups = {}
+    for it in state.get("items", []):
+        if not it.get("files"):
+            continue
+        heading = it.get("out_subdir", "") or "(root)"
+        for f in it["files"]:
+            groups.setdefault(heading, []).append(os.path.relpath(f, out))
+    return [(h, groups[h]) for h in sorted(groups)]
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dir", required=True)
-    ap.add_argument("--outputs", required=True)
+    ap.add_argument("--dir")
+    ap.add_argument("--outputs")
+    ap.add_argument("--state")
     ap.add_argument("--title", default="Contact sheet")
     ap.add_argument("--subtitle", default="")
     ap.add_argument("--inputs", default="", help="role=FILE,role=FILE (optional)")
     a = ap.parse_args()
+
+    if a.state:
+        s = json.load(open(a.state))
+        groups = groups_from_state(s)
+        title = a.title if a.title != "Contact sheet" else os.path.basename(s["output"])
+        n = sum(len(files) for _h, files in groups)
+        sub = a.subtitle or "%d outputs · technique %s" % (n, s.get("technique", ""))
+        html = render_contact_sheet(title, sub, [], groups)
+        out = os.path.join(s["output"], "_contact_sheet.html")
+        open(out, "w").write(html)
+        print("wrote", out)
+        return
+    if not (a.dir and a.outputs):
+        ap.error("provide --state (per-image) or --dir + --outputs (compose)")
 
     inputs = []
     if a.inputs:

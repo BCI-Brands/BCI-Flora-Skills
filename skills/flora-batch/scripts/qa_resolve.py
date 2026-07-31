@@ -11,11 +11,13 @@ Any selected filename not found in --state is printed under UNRESOLVED
 instead of being silently dropped. Any selected filename whose basename
 collides across two different input photos (a recursive-batch edge case --
 see resolve_qa_pairs docstring) is printed under AMBIGUOUS instead of being
-silently paired with a possibly-wrong input. Either case exits 1.
+silently paired with a possibly-wrong input. Either case exits 1 and qa_manifest.json is NOT written (any stale manifest
+from a prior run is deleted) -- a partial manifest must never silently shrink
+QA coverage.
 """
 import argparse, os, json, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from floralib import resolve_qa_pairs
+from floralib import resolve_qa_pairs, save_json_atomic
 
 
 def main():
@@ -29,17 +31,20 @@ def main():
     result = resolve_qa_pairs(state, selected)
 
     manifest_path = os.path.join(os.path.dirname(os.path.abspath(a.state)), "qa_manifest.json")
-    json.dump(result["pairs"], open(manifest_path, "w"), indent=2)
+    if result["unresolved"] or result["ambiguous"]:
+        if os.path.exists(manifest_path):
+            os.remove(manifest_path)      # never leave a stale manifest to reuse
+        if result["unresolved"]:
+            print("UNRESOLVED (not found in state -- check spelling):", result["unresolved"])
+        if result["ambiguous"]:
+            print("AMBIGUOUS (same filename, multiple different inputs -- resolve manually):",
+                  result["ambiguous"])
+        print("qa_manifest.json NOT written -- fix the selections above and re-run")
+        sys.exit(1)
 
+    save_json_atomic(result["pairs"], manifest_path)
     print("resolved  :", len(result["pairs"]))
     print("manifest  :", manifest_path)
-    if result["unresolved"]:
-        print("UNRESOLVED (not found in state -- check spelling):", result["unresolved"])
-    if result["ambiguous"]:
-        print("AMBIGUOUS (same filename, multiple different inputs -- resolve manually):",
-              result["ambiguous"])
-    if result["unresolved"] or result["ambiguous"]:
-        sys.exit(1)
 
 
 if __name__ == "__main__":

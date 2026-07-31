@@ -2,6 +2,7 @@
 """Pure, network-free helpers for the flora-batch skill. Unit-tested; imported by
 the thin CLI scripts (download.py, compose.py, contact_sheet.py)."""
 import base64
+import json
 import os
 import re
 
@@ -29,6 +30,44 @@ def estimate_cost(run_cost, num_runs):
     """Total USD = run_cost x number of RUNS. Outputs-per-run are free; do not
     multiply by output count. Compose look = 1 run; per-image batch = N runs."""
     return round(run_cost * num_runs, 2)
+
+
+def save_json_atomic(obj, path, indent=2):
+    """Write JSON via temp-file + os.replace so an interrupt can never leave a
+    truncated file. The state files are the pipeline's only checkpoint -- a
+    half-written batch_state.json loses the whole batch's recovery story.
+    Temp file lives in the same directory so os.replace stays atomic."""
+    tmp = path + ".tmp"
+    with open(tmp, "w") as f:
+        json.dump(obj, f, indent=indent)
+    os.replace(tmp, path)
+
+
+def match_reservations(reservations, items):
+    """Match rel-keyed upload reservations ({rel: {asset_id,url,form_fields}})
+    to state items. Only items still at stage 'pending' need one. Replaces the
+    old positional-list pairing, where a same-length wrong-order file silently
+    attached the wrong asset_id to the wrong image.
+
+    Returns {"matched": {rel: reservation}, "missing_rels": [...],
+    "unknown_rels": [...]} -- missing = pending item with no reservation,
+    unknown = reservation key not present in items at all (likely a typo)."""
+    all_rels = {it["rel"] for it in items}
+    pending = {it["rel"] for it in items if it.get("stage") == "pending"}
+    matched = {rel: r for rel, r in reservations.items() if rel in pending}
+    return {
+        "matched": matched,
+        "missing_rels": sorted(pending - set(reservations)),
+        "unknown_rels": sorted(set(reservations) - all_rels),
+    }
+
+
+def is_output_artifact(filename, suffix):
+    """True if filename looks like a batch OUTPUT (<stem><suffix>_<n>.<ext>).
+    Guards init.py enumeration: the 'same' convention writes outputs into the
+    input folder, so a re-init there would otherwise enqueue prior outputs as
+    new inputs -- and pay to run the technique on its own outputs."""
+    return re.search(re.escape(suffix) + r"_\d+\.[A-Za-z0-9]+$", filename) is not None
 
 
 DEFAULT_ROLE_KEYWORDS = {
@@ -207,3 +246,37 @@ def render_qa_report_md(results):
             "yes" if r["overall_flag"] else "no",
         ))
     return "\n".join(lines)
+
+
+def build_curl_upload_args(url, form_fields, filepath):
+    """curl argv for one presigned-POST upload. Form fields go through
+    --form-string so a value starting with '@' or '<' is sent literally
+    (with -F curl would read a local file). Only the file part uses -F,
+    and it goes LAST (required by S3/GCS presigned POST)."""
+    args = ["curl", "-sS", "--connect-timeout", "30", "--max-time", "300",
+            "-o", "/dev/null", "-w", "%{http_code}", "-X", "POST", url]
+    for k, v in form_fields.items():
+        args += ["--form-string", "%s=%s" % (k, v)]
+    args += ["-F", "file=@%s" % filepath]
+    return args
+
+
+COLOR_VERDICTS = frozenset(["match", "minor_shift", "mismatch"])
+CONSTRUCTION_VERDICTS = frozenset(["match", "minor_deviation", "mismatch"])
+
+
+def validate_qa_results(results):
+    """Problem strings for records whose verdicts are outside the canonical
+    vocabulary ([] == all valid). Typos would flag conservatively downstream
+    (qa_overall_flag treats any non-'match' as flagged) but corrupt the
+    machine-readable report the PhotoStudio app will consume -- catch them."""
+    problems = []
+    for i, r in enumerate(results):
+        name = os.path.basename(r.get("output", "record %d" % i))
+        c = (r.get("color") or {}).get("verdict")
+        k = (r.get("construction") or {}).get("verdict")
+        if c not in COLOR_VERDICTS:
+            problems.append("%s: unknown color verdict %r" % (name, c))
+        if k not in CONSTRUCTION_VERDICTS:
+            problems.append("%s: unknown construction verdict %r" % (name, k))
+    return problems

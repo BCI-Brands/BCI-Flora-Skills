@@ -1,3 +1,4 @@
+import os
 import contact_sheet
 
 
@@ -25,3 +26,15 @@ def test_render_escapes_html_metacharacters():
     assert "<script>alert(1)</script>" not in html
     assert "&lt;script&gt;" in html
     assert "&amp;" in html
+
+
+def test_groups_from_state_groups_done_items_by_out_subdir():
+    state = {"output": "/out", "items": [
+        {"rel": "a.jpg", "out_subdir": "", "files": ["/out/a_MCP_1.png", "/out/a_MCP_2.png"]},
+        {"rel": "s/b.jpg", "out_subdir": "s_MCP", "files": ["/out/s_MCP/b_MCP_1.png"]},
+        {"rel": "c.jpg", "out_subdir": "", "files": []},   # not downloaded -> excluded
+    ]}
+    assert contact_sheet.groups_from_state(state) == [
+        ("(root)", ["a_MCP_1.png", "a_MCP_2.png"]),
+        ("s_MCP", [os.path.join("s_MCP", "b_MCP_1.png")]),
+    ]

@@ -68,7 +68,7 @@ Stages: `pending → uploaded → run_started → outputs_ready → done` (or `r
 2. **Run** — per-image: `techniques.runs.create(...)` per image (**throttle**). Workspace-billed / compose: `runs.startTechnique({technique_id, workspace_id, inputs})` (see **Workspace billing** and **Compose techniques**). Persist `run_id`.
 3. **Poll** — nested runs: `techniques.runs.retrieve(run_id,{techniqueId})`; top-level/compose runs: `generations.retrieve(run_id)`. Poll with one short call (≤~24 s sleep + one retrieve) — long calls hit the code-server 502. `status` is truth; `progress` is coarse/non-linear. **Re-run** a `failed` run with a **fresh** idempotency key.
 4. **Download** — `curl` each output (`?tr=orig-true` for pristine) into the output convention: `<stem><suffix>_1.png`, `_2.png`.
-5. **Auto-review** (if `--review`, default on) — build a comparison contact sheet (original → outputs) + a short findings note (counts, exact $ charged, any off-looking conversions), rendered via headless Chrome.
+5. **Auto-review** (if `--review`, default on) — `python3 scripts/contact_sheet.py --state batch_state.json` builds a portable gallery (opens by double-click, no headless Chrome) + a short findings note (counts, exact $ charged, any off-looking conversions).
 
 ## Compose (multi-input) techniques
 
@@ -92,7 +92,7 @@ Once the user has reviewed the contact sheet / outputs and told you which ones t
 
 **Zero additional Flora spend.** This step makes no MCP `run`/`technique` calls — only local file reads plus your own vision.
 
-1. **Resolve** the picks back to their input photos: `python3 scripts/qa_resolve.py --state batch_state.json --selected out1.png,out2.png` → writes `qa_manifest.json` (`[{"output","input"}, ...]`). If it prints `UNRESOLVED`, those filenames don't match anything in `batch_state.json` — confirm the spelling with the user rather than guessing.
+1. **Resolve** the picks back to their input photos: `python3 scripts/qa_resolve.py --state batch_state.json --selected out1.png,out2.png` → writes `qa_manifest.json` (`[{"output","input"}, ...]`). If it prints `UNRESOLVED` (filename not in `batch_state.json`) or `AMBIGUOUS` (same basename from two different inputs), no manifest is written — confirm with the user rather than guessing, then re-run.
 2. **Judge each pair** by reading the `output` and `input` images directly and scoring them against the rubrics below. If you can't see a detail clearly, say so in `notes` instead of forcing a verdict.
 3. **Write your verdicts** to `qa_results.json`: `[{"output":path,"input":path,"color":{"verdict":...,"notes":...},"construction":{"verdict":...,"notes":...}}, ...]`.
 4. **Render the report:** `python3 scripts/qa_report.py --results qa_results.json --out-dir DIR` → writes `DIR/qa_report.json` + `DIR/qa_report.md`, and prints only the flagged items.
@@ -130,7 +130,7 @@ Once the user has reviewed the contact sheet / outputs and told you which ones t
 | **Heavy techniques time out — throttle *and* expect single-run timeouts.** Cap concurrent runs (~6–8). A **single** heavy run (e.g. a 2K technique fanning to ~24 outputs) can still `GENERATION_PROVIDER_TIMEOUT` after ~10–15 min at concurrency 1 — transient; **retry once with a fresh idempotency key** (usually succeeds). Failed runs are **not billed** (no `charged_cost`). | 35 concurrent 4K runs → 18 timeouts; LOOK 9 (1 run, 24 × 2K) also timed out once, then succeeded on retry. |
 | **`insufficient_credits` = stop, tell the user to top up.** Never try to buy credits. Blocked items stay `run_blocked`; resume after top-up. | You cannot purchase on their behalf. |
 | **Keep sandbox `execute` calls short.** Chunk API loops (~10) and prefer single-shot `retrieve` over long internal `sleep` loops. | Long calls hit `502` gateway timeouts; short ones get through. |
-| **`execute` output hard-caps at 100 000 bytes and ERRORS — there is NO auto-save / file bridge.** Keep returns small (for reservations return only `{asset_id, url, form_fields}`; ~10 fit under the cap and render inline). Move signed data to local by writing `reservations.json` yourself, then **rely on `upload.py`'s HTTP-status check as the safety net** — a mis-copied `policy`/`x-goog-signature` yields a loud 400/403 and `assets.retry(asset_id)` + re-run repairs just that item. Optionally lint each reservation with `floralib.validate_gcs_reservation` first. For big batches, **chunk** reservation calls (~10/`execute`), writing each chunk before the next. | Padding a return to "force a file save" just throws `Error: Output exceeded 100000 bytes`. Verify-and-retry, not a file bridge, is what makes transcription safe (proven on LOOK 9). |
+| **`execute` output hard-caps at 100 000 bytes and ERRORS — there is NO auto-save / file bridge.** Keep returns small (for reservations return only `{rel: {asset_id, url, form_fields}}` keyed by each item's `rel`; ~10 fit under the cap and render inline). Move signed data to local by writing `reservations.json` yourself, then **rely on `upload.py`'s HTTP-status check as the safety net** — a mis-copied `policy`/`x-goog-signature` yields a loud 400/403 and `assets.retry(asset_id)` + re-run repairs just that item. Optionally lint each reservation with `floralib.validate_gcs_reservation` first. For big batches, **chunk** reservation calls (~10/`execute`), writing each chunk before the next. | Padding a return to "force a file save" just throws `Error: Output exceeded 100000 bytes`. Verify-and-retry, not a file bridge, is what makes transcription safe (proven on LOOK 9). |
 | **Pristine downloads are host-specific.** `?tr=orig-true` is an **ImageKit** transform — apply it only to `ik.imagekit.io` URLs (fall back to bare on 404). **`media.flora.ai` outputs are already full-res PNG** — download the **bare** URL. `download.py` / `floralib.output_variants` do this automatically. | Appending `?tr=orig-true` to a `media.flora.ai` URL wastes a request and can fetch an unexpected response. |
 | **Local output folders may move** (iCloud/Dropbox/Hazel sync). If a path vanishes mid-run, `find` for `batch_state.json` and repoint. | Desktop output folders were relocated into Dropbox twice mid-session. |
 
@@ -140,12 +140,11 @@ Local drivers live in `scripts/` and are **state-file-driven** (read the state J
 
 - `scripts/floralib.py` — pure, unit-tested helpers (host-aware download variants, cost estimate, file→role mapping, reservation lint, compose-state builder). Imported by the others.
 - `scripts/init.py` — per-image: enumerate + build output tree + write `batch_state.json`.
-- `scripts/upload.py` — reservations file + state → GCS/ImageKit POST per image (auto-detects backend by form fields).
+- `scripts/upload.py` — rel-keyed reservations file (`{"<rel>": {asset_id,url,form_fields}}`, pending items only) + state → GCS/ImageKit POST per image (auto-detects backend by form fields).
 - `scripts/download.py` — two modes: per-image `--state`, or compose `--outputs outputs.json --out-dir DIR` (names by `output_id`). Host-aware.
 - `scripts/compose.py` — multi-input: map files → roles, write `compose_state.json`, print the correct cost gate.
-- `scripts/contact_sheet.py` — portable self-contained review gallery (relative `<img>` refs; opens by double-click; press-D dev mode). No headless Chrome.
-- `scripts/review.py` — legacy comparison HTML for headless-Chrome screenshotting (prefer `contact_sheet.py`).
-- `scripts/qa_resolve.py` — map user-picked output filenames back to their input photos, write `qa_manifest.json` (per-image only, v1).
+- `scripts/contact_sheet.py` — portable self-contained review gallery, two modes: per-image `--state batch_state.json`, or compose `--dir DIR --outputs outputs.json`. Relative `<img>` refs; opens by double-click; press-D dev mode. No headless Chrome.
+- `scripts/qa_resolve.py` — map user-picked output filenames back to their input photos, write `qa_manifest.json` (per-image only, v1). Written only when EVERY pick resolves — unresolved/ambiguous picks exit 1 with no manifest.
 - `scripts/qa_report.py` — render Claude's judged verdicts into `qa_report.json` + `qa_report.md`, print only the flagged items.
 - `scripts/tests/` — `pytest` unit tests for `floralib` + `contact_sheet` (`python3 -m pytest skills/flora-batch/scripts/tests -q`).
 
