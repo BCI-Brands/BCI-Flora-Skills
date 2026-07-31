@@ -19,6 +19,9 @@ batch_state.json
 *_MCP_*.jpg
 *_MCP_*.jpeg
 
+# superpowers plugin: local brainstorm/session scratch (mockups, preview-server state)
+.superpowers/
+
 # graphify: machine-local paths + regenerable extraction cache
 graphify-out/.graphify_python
 graphify-out/.graphify_root
