@@ -385,3 +385,42 @@ def test_validate_qa_results_flags_missing_verdict_key():
                 "construction": {"verdict": "match", "notes": ""}}]
     problems = floralib.validate_qa_results(results)
     assert len(problems) == 1 and "None" in problems[0]
+
+
+def test_qa_findings_index_keys_by_output_basename_and_skips_match():
+    results = [
+        {"output": "renders/look05_v1.png", "input": "inputs/top05_mustard_vneck.jpg",
+         "color": {"verdict": "match", "notes": ""},
+         "construction": {"verdict": "mismatch", "notes": "all-over rib hallucinated"}},
+        {"output": "renders/look05_v1.png", "input": "inputs/bot05_navy_midi_skirt.jpg",
+         "color": {"verdict": "match", "notes": ""},
+         "construction": {"verdict": "match", "notes": "pleats match"}},
+    ]
+    idx = floralib.qa_findings_index(results)
+    assert idx == {"look05_v1.png": [
+        {"input": "top05_mustard_vneck.jpg", "dimension": "construction",
+         "verdict": "mismatch", "notes": "all-over rib hallucinated"},
+    ]}
+
+
+def test_qa_findings_index_clean_output_present_with_empty_list():
+    results = [
+        {"output": "a/b/clean.png", "input": "in/tee.jpg",
+         "color": {"verdict": "match", "notes": ""},
+         "construction": {"verdict": "match", "notes": ""}},
+    ]
+    assert floralib.qa_findings_index(results) == {"clean.png": []}
+
+
+def test_qa_findings_index_collects_color_and_construction_from_both_inputs():
+    results = [
+        {"output": "o.png", "input": "top.jpg",
+         "color": {"verdict": "minor_shift", "notes": "warmer"},
+         "construction": {"verdict": "minor_deviation", "notes": "extra button"}},
+        {"output": "o.png", "input": "bottom.jpg",
+         "color": {"verdict": "match", "notes": ""},
+         "construction": {"verdict": "mismatch", "notes": "skirt missing"}},
+    ]
+    idx = floralib.qa_findings_index(results)
+    assert [f["verdict"] for f in idx["o.png"]] == ["minor_shift", "minor_deviation", "mismatch"]
+    assert idx["o.png"][2]["input"] == "bottom.jpg"

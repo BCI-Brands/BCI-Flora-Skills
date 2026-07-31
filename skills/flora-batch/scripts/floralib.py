@@ -280,3 +280,25 @@ def validate_qa_results(results):
         if k not in CONSTRUCTION_VERDICTS:
             problems.append("%s: unknown construction verdict %r" % (name, k))
     return problems
+
+
+def qa_findings_index(results):
+    """Map output basename -> list of non-match QA findings, for annotating the
+    contact sheet. Each finding: {input, dimension, verdict, notes} (basenames).
+    An output judged all-match maps to [] (distinguishes judged-clean from
+    never-judged, which is simply absent)."""
+    idx = {}
+    for entry in results:
+        out = os.path.basename(entry["output"])
+        idx.setdefault(out, [])
+        for dim in ("color", "construction"):
+            d = entry.get(dim) or {}
+            verdict = d.get("verdict")
+            if verdict and verdict != "match":
+                idx[out].append({
+                    "input": os.path.basename(entry["input"]),
+                    "dimension": dim,
+                    "verdict": verdict,
+                    "notes": d.get("notes", ""),
+                })
+    return idx
